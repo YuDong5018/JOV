@@ -1,0 +1,2385 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <title>MapboxGL & D3.js</title>
+
+    <style>
+        .mapboxgl-ctrl-bottom-left div{
+            display:none !important;
+        }
+        .mapboxgl-ctrl-attrib-inner {
+            display: none;
+        }
+        html, body, #wrapper {
+            width: 100%;
+            height: 100%;
+            padding: 0px;
+            margin: 0px;
+        }
+
+        .node {
+            cursor: pointer;
+        }
+
+        #map {
+            position:relative;
+            width: 100%;
+            height: 100%;
+            margin: auto auto;
+        }
+        svg {
+            /*position: absolute;*/
+            width: 100%;
+            height: 100%;
+        }
+        .hidden {
+            display: none;
+        }
+
+        .brush .extent {
+            stroke: #000;
+            stroke-width: 1.5px;
+            fill: #000;
+            fill-opacity: 0.3;
+        }
+
+        .voronoi {
+            fill: steelblue;
+            fill-opacity: 0.4;
+            stroke: steelblue;
+            stroke-opacity: 0.5;
+        }
+
+        .voronoi.selected {
+            fill: red;
+            fill-opacity: 0.4;
+            stroke: darkred;
+            stroke-opacity: 0.5;
+        }
+
+        .dots.selected {
+            fill: red;
+            stroke: darkred;
+            stroke-width: 1;
+        }
+        #features {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            width: 35%;
+            overflow: auto;
+            background: rgba(255, 255, 255, 0);
+
+        }
+
+        #controlpanel{
+            position: absolute;
+            float: left;
+            left: 0;
+            bottom: 0;
+            width: 17%;
+            overflow: auto;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.8);
+            margin: 1em 0.5em;
+        }
+
+        #timeline{
+            position: absolute;
+            float: left;
+            left: 17.7%;;
+            bottom: 0;
+            width: 45.7%;
+            height: 150px;
+            overflow: auto;
+            background: rgba(255, 255, 255, 0.8);
+            margin: 1em 0.5em;
+        }
+
+        #treestructure{
+
+            float: left;
+            left: 0;
+            bottom: 0;
+            width: 99%;
+            height: 48%;
+            overflow: auto;
+            background: rgba(255, 255, 255, 0.8);
+            margin: 0.5em 0;
+        }
+        .outerRectShow{
+            display: flex;
+            float: left;
+            left: 0;
+            bottom: 0;
+            width: 99%;
+            height: 48%;
+            overflow: auto;
+            background: rgba(255, 255, 255, 0.8);
+            margin: 0.5em 0;
+        }
+        #appendSVG{
+            width: 99%;
+            height: 100%;
+
+        }
+
+        .divlegend{
+            position: absolute;
+            text-align: left;
+            width: 185px;
+            font-size: 14px;
+            background: #444444;
+            padding: 4px;
+            /*padding: 2vw;*/
+            /*font: 1vw sans-serif;*/
+            border: 0px;
+            border-radius: 5px;
+            color:white;
+            /*字体颜色*/
+            box-shadow: -3px 3px 15px #888888;
+            opacity:0.8;
+            display: none;
+        }
+
+
+
+    </style>
+</head>
+
+<body>
+<div id="wrapper">
+    <!--    <button onclick="myFunction()">Click me</button>-->
+    <div id="map"></div>
+    <div id = "controlpanel">
+        <div class="input-group">
+            <div class="custom-file">
+                <input type="file" class="custom-file-input" id="inputGroupFile04">
+                <label class="custom-file-label" for="inputGroupFile04">Choose file</label>
+            </div>
+            <div class="input-group-append">
+                <button class="btn btn-outline-secondary" type="button">Button</button>
+            </div>
+        </div>
+
+    </div>
+    <div id = "timeline">
+        <div id="appendBrushSVG" class="timelinechart" data-role="timelinechart" data-width=1000 data-height=200 data-config='{"gutter": 0.1}' data-data="">
+        </div>
+    </div>
+    <div id="features">
+        <div id="treestructure">
+
+        </div>
+        <div class="outerRectShow" style="padding: 10px">
+            <div id="appendSVG">
+
+            </div>
+        </div>
+    </div>
+    <div id="drag">
+        <div class="divtitle">
+            <h2>Control Panel</h2>
+            <div>
+                <a class="min" href="javascript:;" title="Minimum"></a>
+                <a class="max" href="javascript:;" title="Maximum"></a>
+                <a class="revert" href="javascript:;" title="Revert"></a>
+                <a class="close" href="javascript:;" title="Close"></a>
+            </div>
+        </div>
+        <div class="resizeL"></div>
+        <div class="resizeT"></div>
+        <div class="resizeR"></div>
+        <div class="resizeB"></div>
+        <div class="resizeLT"></div>
+        <div class="resizeTR"></div>
+        <div class="resizeBR"></div>
+        <div class="resizeLB"></div>
+        <!--    <div class="content" id="dragwindow">-->
+
+        <!--    </div>-->
+        <div class = "content" id="dragwindow" style="height: 50%;width: 100%" >
+
+
+        </div>
+        <div class = "content" id="selectbotton" style="height: 10%;width: 100%; padding-left: 20px; padding-right: 20px; padding-top: 10px;" >
+            <button type="button" class = 'button small' style=" width: 100px; height: 25px; font-size: 14px" onclick="Filterdata()">Filter</button>
+
+            <button type="button" class = 'button small' style="float:right; width: 100px; height: 25px; font-size: 14px" onclick="Reset()">Reset</button>
+        </div>
+        <div class = "content" id="examplelegend" style="height: 30%;width: 100%" >
+
+        </div>
+
+    </div>
+</div>
+
+<script src='./JS/bootstrap.min.js'></script>
+<link rel="stylesheet" href="./CSS/bootstrap.min.css" type="text/css">
+<script src='./JS/d3.v4.min.js'></script>
+<script src='./JS/d3.v5.min.js'></script>
+<!--<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.52.0/mapbox-gl.js'></script>-->
+<script src='./JS/d3.v3.min.js'></script>
+<!--<script src="https://d3js.org/topojson.v1.min.js"></script>-->
+<script src="./JS/supercluster.js"></script>
+<script src="./JS/polybrush.js"></script>
+<script src="./JS/mapbox-gl-draw.js"></script>
+<link rel="stylesheet" href="./CSS/mapbox-gl-draw.css" type="text/css">
+<script src="./JS/turf.min.js"></script>
+<script src="./JS/jquery.min.js"></script>
+<script src="./JS//jquery-ui.min.js"></script>
+<script src="./JS//jquery.csv.min.js"></script>
+<link href="./CSS/mapbox-gl.css" rel="stylesheet">
+<script src="./JS/mapbox-gl.js"></script>
+<script src='./JS/mapbox.js'></script>
+<script type="text/javascript" src="./JS/force.js"></script>
+<script type="text/javascript" src="./JS/matrix.js"></script>
+<script type="text/javascript" src="./JS/timeline.js"></script>
+<script type="text/javascript" src="./JS/windowstyle.js"></script>
+
+<link href='./CSS/mapbox.css' rel='stylesheet' />
+<link href='./CSS/timeline.css' rel='stylesheet' />
+<link href='./CSS/windowstyle.css' rel='stylesheet' />
+<link href='./CSS/style.css' rel='stylesheet' />
+<link href='./CSS/demo.css' rel='stylesheet' />
+<link href='./CSS/normalize.css' rel='stylesheet' />
+
+<link type="text/css" rel="stylesheet" href="./CSS/force.css"/>
+
+
+
+<script>
+
+    //COLOR PANEL
+    var ColorGrey = ['#C0C0C0'];
+    var Flowercolorpannel = ['#d53e4f','#1f78b4','#b2df8a','#33a02c','#fb9a99','#a6cee3','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99'];
+
+    var mapcirclecolor = ["#2E8B57","#483D8B","#e69e19"];
+
+    var LGAcenter = {
+        type: 'FeatureCollection',
+        features: []
+    };
+    var LGAcenterforD3 = {
+        type: 'FeatureCollection',
+        features: []
+    };
+    var LGAcenterofMonth= {
+        type: 'FeatureCollection',
+        features: []
+    };
+
+    //var tempclustersinfo = [];
+    // var wasLoaded = false;
+    var mapboxDynamicCluster = [];
+    var mapboxtempPolygonPoints = [];
+    var mapsaveparameters = [];
+    var mapsavegroups = [];
+    var finalcenterpoint = []; //for global storage center point
+    var templgacodestore = [];
+    var clusterdiff = [];
+    var unclusterdiff = [];
+    var savetotaldata = [];
+    var storeid = 0;
+
+    var myEvent = new Event('dispatchSaveTotalData');
+
+    //var loadflag = 0;
+    var margin = {top: 30, right: 18, bottom: 10, left: 10};
+
+    // $.getJSON('./Data/11nsw-lga-boundaries.geojson',function(geojson) {
+    $.getJSON('./Data/nsw_lga_polygon_V5.geojson',function(geojson) {
+        var svg;
+        var brush;
+
+        var clusterarr = [];
+        //var otherclusterarr = [];
+        var otherclusterarr = [];
+        var clusterstring = "";
+        var centrepoint = [];
+        var tickflag = 0;
+
+        $.getJSON('./Data/New_Month_Result.json',function(monthjson) {
+            var storearr = [];
+
+            for (var a = 0; a < geojson.features.length; a++) {
+                var temparr = [];
+                for (var b = 0; b < monthjson.RECORDS.length; b ++)
+                {
+
+                    if (geojson.features[a].properties.lgacode == monthjson.RECORDS[b].lgacode)
+                    {
+                        var tempsplitdate = monthjson.RECORDS[b].Date.split("/");
+                        var maxnumber = monthjson.RECORDS[b].maxnumber * 2;
+                        // if (monthjson.RECORDS[b].cases != 0)
+                        // {
+                        //     console.log(monthjson.RECORDS[b].Date + ", " + monthjson.RECORDS[b].lgacode + " has " + monthjson.RECORDS[b].cases);
+                        // }
+                        if (tempsplitdate[1] === '2020'){
+                            temparr.push({
+                                "Month": Number(tempsplitdate[0]),
+                                "Year": tempsplitdate[1],
+                                "lgacode": monthjson.RECORDS[b].lgacode,
+                                "nsw_lga_3": monthjson.RECORDS[b].nsw_lga_3,
+                                "cases": monthjson.RECORDS[b].cases,
+                                "start": 360 / maxnumber * (Number(tempsplitdate[0]) - 1),
+                                "end": 360 / maxnumber * Number(tempsplitdate[0])
+                            });
+                        }
+                        else if (tempsplitdate[1] === '2021'){
+                            temparr.push({
+                                "Month": Number(tempsplitdate[0]) + 12,
+                                "Year": tempsplitdate[1],
+                                "lgacode": monthjson.RECORDS[b].lgacode,
+                                "nsw_lga_3": monthjson.RECORDS[b].nsw_lga_3,
+                                "cases": monthjson.RECORDS[b].cases,
+                                "start": 360 / maxnumber * (Number(tempsplitdate[0]) - 1 + 12),
+                                "end": 360 / maxnumber * (Number(tempsplitdate[0]) + 12)
+                            });
+                        }
+
+                    }
+
+                }
+                //console.log(temparr);
+
+                LGAcenterofMonth.features.push({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": geojson.features[a].geometry.coordinates
+                    },
+
+                    "properties": {
+                        "geo_point_2d": [geojson.features[a].properties.geo_point_2d[0], geojson.features[a].properties.geo_point_2d[1]],
+                        "name": geojson.features[a].properties.nsw_lga_3,
+                        //"mag": Math.ceil(Math.random()*10),
+                        "lgacode": geojson.features[a].properties.lgacode,
+                        "caseslist": temparr
+                    }
+                });
+
+                LGAcenter.features.push({
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [geojson.features[a].properties.geo_point_2d[1], geojson.features[a].properties.geo_point_2d[0]]
+                        //swap latlng orders
+                    },
+                    "properties": {
+                        "name": geojson.features[a].properties.nsw_lga_3,
+                        //"mag": Math.ceil(Math.random()*10),
+                        "lgacode": geojson.features[a].properties.lgacode,
+                        "caseslist": temparr
+                    }
+                })
+                // LGAcenterforD3.features.push({
+                //     "type": "Feature",
+                //     "geometry": {
+                //         "type": "Polygon",
+                //         "coordinates": geojson.features[a].geometry.coordinates
+                //     },
+                //
+                //     "properties": {
+                //         "geo_point_2d": [geojson.features[a].properties.geo_point_2d[0], geojson.features[a].properties.geo_point_2d[1]],
+                //         "name": geojson.features[a].properties.nsw_lga_3,
+                //         "mag": Math.ceil(Math.random()*10),
+                //         "lgacode": geojson.features[a].properties.lgacode
+                //     }
+                // })
+
+            }
+            //
+            // var covidcasestest = [];
+            // var weektest = 53;
+            //
+            //
+            // for (var i = 0; i < LGAcenterforD3.features.length; i++)
+            // {
+            //     var casestestbyweeks = [];
+            //     for (var j = 1; j <= weektest; j ++)
+            //     {
+            //
+            //         casestestbyweeks.push({
+            //             "week": j,
+            //             "year": "2020",
+            //             "cases": Math.floor(Math.random()*10+1),
+            //             "start": 360 / weektest * (j - 1),
+            //             "end": 360 / weektest * j
+            //         });
+            //     }
+            //
+            //     covidcasestest.push({
+            //         "LGAname": LGAcenter.features[i].properties.name,
+            //         "LGAcode": LGAcenter.features[i].properties.lgacode,
+            //         "properties": casestestbyweeks
+            //     })
+            //     LGAcenterforD3.features[i].properties.caseslist = casestestbyweeks
+            //     //console.log(LGAcenterforD3.features[i])
+            //
+            // }
+
+            var tempstringLGAcenterofMonth = JSON.stringify(LGAcenterofMonth);
+            var tempLGAcenterofMonth = JSON.parse(tempstringLGAcenterofMonth);
+            var tempclustersinfo = [];
+            var tempstorelgacode = [];
+
+            var nswBounds = [
+                [140, -38],
+                [157, -27]
+            ];
+
+            mapboxgl.accessToken = 'pk.eyJ1IjoibWFnZTUwMTgiLCJhIjoiY2psd3cwemxuMTlyYzNwb2d4cXhyNGx0ZSJ9.VkkG4riV7oxGcAnStBiHJA'
+            var map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mage5018/ckbumhoti0mes1iqmcl4m1qo7',
+                zoom: 5.8,
+                center: [150.91, -33.30],
+                pitchWithRotate: false,
+                dragRotate: true,
+                //maxBounds: nswBounds,
+                //attributionControl: true
+            });
+            //map.addControl(new mapboxgl.NavigationControl());
+            var draw = new MapboxDraw({
+                displayControlsDefault: false,
+                // Select which mapbox-gl-draw control buttons to add to the map.
+                controls: {
+                    polygon: true,
+                    trash: true
+                },
+                // Set mapbox-gl-draw to draw by default.
+                // The user does not have to click the polygon control button first.
+                //defaultMode: 'draw_polygon'
+            });
+            map.addControl(draw);
+
+// Original ES6 Class— https://github.com/tobinbradley/mapbox-gl-pitch-toggle-control
+// export default class PitchToggle {
+            class PitchToggle {
+                constructor({ bearing = -20, pitch = 70, minpitchzoom = null }) {
+                    this._bearing = bearing;
+                    this._pitch = pitch;
+                    this._minpitchzoom = minpitchzoom;
+                }
+
+                onAdd(map) {
+                    this._map = map;
+                    let _this = this;
+
+                    this._btn = document.createElement("button");
+                    this._btn.className = "mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d";
+                    this._btn.type = "button";
+                    this._btn["aria-label"] = "Toggle Pitch";
+                    this._btn.onclick = function() {
+                        if (map.getPitch() === 0) {
+                            let options = { pitch: _this._pitch, bearing: _this._bearing };
+                            if (_this._minpitchzoom && map.getZoom() > _this._minpitchzoom) {
+                                options.zoom = _this._minpitchzoom;
+                            }
+                            map.easeTo(options);
+                            _this._btn.className =
+                                "mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-2d";
+                        } else {
+                            map.easeTo({ pitch: 0, bearing: 0 });
+                            _this._btn.className =
+                                "mapboxgl-ctrl-icon mapboxgl-ctrl-pitchtoggle-3d";
+                        }
+                    };
+
+                    this._container = document.createElement("div");
+                    this._container.className = "mapboxgl-ctrl-group mapboxgl-ctrl";
+                    this._container.appendChild(this._btn);
+
+                    return this._container;
+                }
+
+                onRemove() {
+                    this._container.parentNode.removeChild(this._container);
+                    this._map = undefined;
+                }
+            }
+
+            /* Idea from Stack Overflow https://stackoverflow.com/a/51683226  */
+            class MapboxGLButtonControl {
+                constructor({
+                                className = "",
+                                title = "",
+                                eventHandler = evtHndlr
+                            }) {
+                    this._className = className;
+                    this._title = title;
+                    this._eventHandler = eventHandler;
+                }
+
+                onAdd(map) {
+                    this._btn = document.createElement("button");
+                    this._btn.className = "mapboxgl-ctrl-icon" + " " + this._className;
+                    this._btn.type = "button";
+                    this._btn.title = this._title;
+                    this._btn.onclick = this._eventHandler;
+
+                    this._container = document.createElement("div");
+                    this._container.className = "mapboxgl-ctrl-group mapboxgl-ctrl";
+                    this._container.appendChild(this._btn);
+
+                    return this._container;
+                }
+
+                onRemove() {
+                    this._container.parentNode.removeChild(this._container);
+                    this._map = undefined;
+                }
+            }
+
+            /* Event Handlers */
+            function one(event) {
+                alert("Event handler when clicking on \r\n" + event.target.className);
+                console.log("event number 1", event);
+            }
+
+            function two(event) {
+                alert("Event handler when clicking on \r\n" + event.target.className);
+                console.log("event number 2", event);
+            }
+            function cancel(event) {
+                alert("Event handler when cancel \r\n" + event.target.className);
+                otherclusterarr = [];
+                finalcenterpoint = [];
+            }
+
+            function save(event) {
+                tickflag = 0;
+                var mapcenter = map.getCenter();
+                var mapzoom = map.getZoom();
+                var mapbearing = map.getBearing();
+                var mappitch = map.getPitch();
+                var mapcurrentSource = map.getSource('lga-center-clustered');
+
+                var tempsaveforeach = [];
+
+                if (otherclusterarr.length > 0){
+                    // console.log(otherclusterarr);
+                    // console.log(unclusterdiff);
+
+                    //groupeddata
+                    for (let x = 0; x < finalcenterpoint.length; x ++){
+                        let tempsave1 = {
+                            "Name": finalcenterpoint[x].clustername,
+                            "LGAcode": finalcenterpoint[x].clusterlgacode,
+                            "caseslist": finalcenterpoint[x].caseslist,
+                            "status": "grouped",
+                            "timespan": "2020-2022",
+                            "count": finalcenterpoint[x].count,
+                            "coordinates": finalcenterpoint[x].coordinates
+                        };
+                        tempsaveforeach.push(tempsave1)
+                    }
+
+                    //otherclustereddata
+                    var tempcentrepoint = [];
+                    for (let i = 0; i < otherclusterarr.length; i++){
+                        let temp_x = 0, temp_y=0;
+                        let count = 0;
+                        let centrepointstring = "";
+                        let centrepointlgastring = "";
+                        let centrepointcaseslist = new Array(24).fill(0);
+                        //var centrepointalllgacode = [];
+
+                        for (let a = 0; a < otherclusterarr[i].length; a ++)
+                        {
+                            //console.log(otherclusterarr[i][a]);
+                            temp_x += Number(otherclusterarr[i][a].geometry.coordinates[0]);
+                            temp_y += Number(otherclusterarr[i][a].geometry.coordinates[1]);
+                            count ++;
+                            let uppername0 = otherclusterarr[i][a].properties.name.toLowerCase();
+                            centrepointstring +=  uppername0 + ", ";
+                            centrepointlgastring += otherclusterarr[i][a].properties.lgacode + "-";
+                            for (let k = 0; k < otherclusterarr[i][a].properties.caseslist.length; k++){
+                                if (otherclusterarr[i][a].properties.caseslist[k]["Month"] === k + 1){
+                                    centrepointcaseslist[k] += otherclusterarr[i][a].properties.caseslist[k]["cases"];
+                                }
+                            }
+                            //centrepointalllgacode.push(selectedarr[a].lgacode);
+                        }
+
+                        let centre_coordinates = [temp_y / count, temp_x / count];
+                        //console.log(centre_coordinates);
+                        tempcentrepoint.push({
+                            "name": centrepointstring.substring(0, centrepointstring.length - 2),
+                            "lgacode": templgacodestore,
+                            "coordinates": centre_coordinates,
+                            "caseslist": centrepointcaseslist
+
+                        });
+                        // console.log(temp_x);
+                        // console.log(temp_y);
+                        //console.log(centrepoint);
+                        //console.log();
+                        let templgasum = [];
+                        for (let l = 0; l < centrepointcaseslist.length; l++){
+                            templgasum.push({
+                                "Month": l + 1,
+                                "cases": centrepointcaseslist[l],
+                                "start": 360 / centrepointcaseslist.length * l,
+                                "end": 360 / centrepointcaseslist.length * (l+1)
+                            });
+                        }
+
+                        tempsaveforeach.push({
+                            "Name": centrepointstring.substring(0, centrepointstring.length - 2),
+                            "LGAcode": centrepointlgastring.substring(0, centrepointlgastring.length - 1),
+                            "caseslist": templgasum,
+                            "status": "clustered",
+                            "timespan": "2020-2022",
+                            "count": otherclusterarr[i].length,
+                            "coordinates": centre_coordinates,
+                        });
+                    }
+
+                    //unclustereddata
+                    for (let i = 0; i < unclusterdiff.length; i ++){
+                        let uppername = unclusterdiff[i].properties.name.toLowerCase();
+                        tempsaveforeach.push({
+                            "Name": uppername.charAt(0).toUpperCase() + uppername.slice(1),
+                            "LGAcode": unclusterdiff[i].properties.lgacode,
+                            "caseslist": JSON.parse(unclusterdiff[i].properties.caseslist),
+                            "status": "unclustered",
+                            "timespan": "2020-2022",
+                            "count": 1,
+                            "coordinates": unclusterdiff[i].geometry.coordinates
+                        });
+
+                    }
+
+                    console.log(tempsaveforeach);
+
+                    if (tempsaveforeach.length >0){
+                        storeid++;
+                        savetotaldata.push({
+                            "Storageid": storeid,
+                            "mappara": [{
+                                "mapcenter": mapcenter,
+                                "mapzoom": mapzoom,
+                                "clusterradius": mapcurrentSource._options.clusterRadius,
+                                "mapbearing": mapbearing,
+                                "mappitch": mappitch
+                            }],
+                            "Details": tempsaveforeach,
+                            "Timeline": window.timeSelection
+                        })
+                    }
+                    window.totaldataforce = savetotaldata;
+
+                    if(window.dispatchEvent) {
+                        window.dispatchEvent(myEvent);
+                    } else {
+                        window.fireEvent(myEvent);
+                    }
+                    console.log(typeof savetotaldata)
+
+                    //保存更新方块图
+                    playRects(appendIdStr, window.totaldataforce, styleControler, cols + 1, rectPadding, mapcirclecolor);
+                }
+
+
+                console.log(savetotaldata);
+
+                //目前不考虑删除数据了，savetotaldata是全部的存储数据，storeid是存储序号，mappara是地图参数
+
+
+                //mapsaveparameters.push([mapcenter, mapzoom, mapcurrentSource._options.clusterRadius, mapbearing, mappitch]);
+
+                //alert("Event handler when clicking on \r\n" + event.target.className);
+                //console.log(mapsaveparameters);
+                //console.log(mapcurrentSource);
+
+                //console.log("event save", event);
+            }
+
+
+
+            function three(event) {
+                alert("Event handler when clicking on \r\n" + event.target.className);
+                console.log("event number 3", event);
+            }
+
+            /* Instantiate new controls with custom event handlers */
+            const ctrlPoint = new MapboxGLButtonControl({
+                className: "mapbox-gl-draw_point",
+                title: "Draw Point",
+                eventHandler: one
+            });
+
+            const ctrlCorrect = new MapboxGLButtonControl({
+                className: "mapbox-gl-draw_symbol_correct",
+                title: "Draw Line",
+                eventHandler: save
+            });
+            const ctrlFalse = new MapboxGLButtonControl({
+                className: "mapbox-gl-draw_symbol_false",
+                title: "Draw Line",
+                eventHandler: cancel
+            });
+            const ctrlFlower = new MapboxGLButtonControl({
+                className: "mapbox-gl-draw_symbol_flower",
+                title: "Draw Line",
+                eventHandler: two
+            });
+            const ctrlRadialarea = new MapboxGLButtonControl({
+                className: "mapbox-gl-draw_symbol_radialarea",
+                title: "Draw Line",
+                eventHandler: two
+            });
+
+            const ctrlSwitch = new MapboxGLButtonControl({
+                className: "mapbox-gl-draw_symbol_switch",
+                title: "Draw Polygon",
+                eventHandler: three
+            });
+
+            /* Add Controls to the Map */
+            map.addControl(new mapboxgl.NavigationControl(), "top-left");
+            map.addControl(new PitchToggle({ minpitchzoom: 11 }), "top-left");
+            //map.addControl(ctrlPoint, "bottom-left");
+            map.addControl(ctrlCorrect, "bottom-right");
+
+            map.addControl(ctrlFalse, "bottom-right");
+            map.addControl(ctrlSwitch, "top-right");
+            map.addControl(ctrlFlower, "top-right");
+            map.addControl(ctrlRadialarea, "top-right");
+
+
+
+            map.on('load', () => {
+
+                map.on('draw.create', updateArea);
+                map.on('draw.delete', updateAreaAfterDelete);
+                map.on('draw.update', updateArea);
+                // Add a data source containing GeoJSON data.
+                map.addSource('lga-polygon', {
+                    'type': 'geojson',
+                    'data': geojson
+                });
+
+                // Add a new layer to visualize the polygon.
+                map.addLayer({
+                    'id': 'polygon-fill',
+                    'type': 'fill',
+                    'source': 'lga-polygon', // reference the data source
+                    'layout': {},
+                    'paint': {
+                        'fill-outline-color': '#484896',
+                        'fill-color': '#e5f5ff', // blue color fill
+                        'fill-opacity': 0.2
+                    }
+                });
+                map.addLayer(
+                    {
+                        'id': 'polygon-highlighted',
+                        'type': 'fill',
+                        'source': 'lga-polygon',
+                        'paint': {
+                            'fill-outline-color': '#484896',
+                            'fill-color': '#c9edff',
+                            'fill-opacity': 0.4
+                        },
+                        'filter': ['in', 'lgacode', '']
+                    }
+                ); // Place polygon under these labels.
+
+                map.addSource('lga-center-clustered', {
+                    'type': 'geojson',
+                    'cluster': true,
+                    'clusterRadius': 60,
+                    'data': LGAcenter
+                });
+                map.addLayer({
+                    'id': 'lga-center-clustered',
+                    'type': 'circle',
+                    'source': 'lga-center-clustered',
+                    'filter': ['==', 'cluster', true],
+                    'paint': {
+                        'circle-opacity': 0.8,
+                        'circle-color': "#2E8B57",
+                        'circle-radius': 5
+                    }
+                });
+                map.addLayer({
+                    'id': 'lga-center-unclustered',
+                    'type': 'circle',
+                    'source': 'lga-center-clustered',
+                    'filter': ['!=', 'cluster', true],
+                    'paint': {
+                        'circle-opacity': 0.8,
+                        'circle-color': "#483D8B",
+                        'circle-radius': 5
+                    }
+                });
+
+                var container = map.getCanvasContainer()
+                const bb = container.getBoundingClientRect();
+                svg = d3v5.select(container)
+                    .append("svg")
+                    .style("position", "absolute")
+                    .style("top", 0)
+                    .style("left", 0)
+                    .attr("width", bb.width)
+                    .attr("height", bb.height)
+
+                // .call(zoom)
+
+                var divlegend = d3.select("body")
+                    .append("div")
+                    .attr("class", "divlegend");
+
+                var group_cluster = svg.append("g").attr('id', 'group_nodecluster')
+                var group_uncluster = svg.append("g").attr('id', 'group_nodeuncluster')
+                var group_select = svg.append("g").attr('id', 'group_nodeselect')
+
+                var pie = d3.layout.pie()
+                    .sort(null)
+                    //默认降序排列，除非传入null
+                    .value(function(d) {
+                        return d.cases;
+                    });
+                var arc = d3.svg.arc()
+                    .startAngle(function(d) {
+                        //console.log(d);
+                        return d.data.start * 2 * Math.PI/360;
+                    })
+                    .endAngle(function(d) { return d.data.end * 2 * Math.PI/360; })
+                    .innerRadius(4)
+                    .outerRadius(function (d) {
+                        //console.log(d);
+                        // if (d.value === 1)
+                        // {
+                        //     return 6 + 3
+                        // } ELSE
+                        if( d.value === 0){
+                            return 5;
+
+                        }
+                        else{
+                            //console.log(d.value);
+                            return 5 + 2 * (1.4 + Math.log(d.value) * 1.2);
+                            //return 15;
+                        }
+                    })
+                    //外部高低
+                    .cornerRadius(20);
+
+
+                function project(data) {
+                    return map.project(new mapboxgl.LngLat(data[1], data[0]));
+                }
+                function projectxy(data) {
+                    return map.project(new mapboxgl.LngLat(data[0], data[1]));
+                }
+
+                function FirstRender(){
+                    console.log("do render");
+                    //for first render to initialize
+                    tempLGAcenterofMonth = JSON.parse(tempstringLGAcenterofMonth);
+                    mapboxDynamicCluster = [];
+
+                    var clusterSourcetemp = map.queryRenderedFeatures({ layers: ['lga-center-clustered'] });
+                    Calc(clusterSourcetemp, Drawoutput, Draw, Allpointset);
+
+                    var mapcenter = map.getCenter();
+                    var mapzoom = map.getZoom();
+                    var mapbearing = map.getBearing();
+                    var mappitch = map.getPitch();
+                    var mapcurrentSource = map.getSource('lga-center-clustered');
+
+                    var tempsaveforeach = [];
+                    QueryIntialMap(QueryIntialMapCluster, WriteIntialMap)
+                    function QueryIntialMap(callback1 , callback2){
+
+                        var features_allcluster = map.queryRenderedFeatures({ layers: ['lga-center-clustered'] });
+                        var features_alluncluster = map.queryRenderedFeatures({ layers: ['lga-center-unclustered'] });
+                        var clusterarrintial = [];
+                        var j = 0;
+                        for (var i = 0; i < features_allcluster.length; i++) {
+                            console.log(features_allcluster.length);
+                            //console.log(features_cluster[i]);
+                            var clusterId = features_allcluster[i].properties.cluster_id,
+                                point_count = features_allcluster[i].properties.point_count,
+                                clusterSource = map.getSource('lga-center-clustered');
+                            //console.log(clusterSource);
+                            // Get all points under a cluster
+
+                            var pt= clusterSource.getClusterLeaves(clusterId, point_count, 0, (err, aFeatures) =>{
+                                clusterarrintial.push(aFeatures);
+                                console.log('here')
+                                // console.log(clusterarr);
+                                //console.log(clusterarr);
+                                j ++;
+                                //console.log(j);
+                                if (features_allcluster.length === j ){
+                                    console.log('here2')
+                                    // console.log(clusterarr);
+                                    callback1(clusterarrintial, features_alluncluster, callback2);
+                                    //setTimeout(callback1(clusterarrintial, features_alluncluster, callback2), 100)
+                                    //clearInterval(ss);
+                                    //return;
+                                }
+                                //console.log('getClusterLeaves', err, aFeatures);
+                                // clusterstring += JSON.stringify(
+                                //     aFeatures,
+                                //     null,
+                                //     2
+                                // );
+                            })
+                            //console.log(i);
+                            // console.log(pt)
+
+                        }
+
+
+                    }
+                    function QueryIntialMapCluster(clusterarrintial, features_alluncluster, callback){
+
+                        console.log(clusterarrintial);
+                        console.log(features_alluncluster);
+                        //unclustereddata
+                        for (let i = 0; i < features_alluncluster.length; i ++){
+                            let uppername = features_alluncluster[i].properties.name.toLowerCase();
+                            tempsaveforeach.push({
+                                "Name": uppername.charAt(0).toUpperCase() + uppername.slice(1),
+                                "LGAcode": features_alluncluster[i].properties.lgacode,
+                                "caseslist": JSON.parse(features_alluncluster[i].properties.caseslist),
+                                "status": "unclustered",
+                                "timespan": "2020-2022",
+                                "count": 1,
+                                "coordinates": features_alluncluster[i].geometry.coordinates
+                            });
+
+                        }
+
+                        //initialclustereddata
+                        var tempcentrepoint = [];
+                        for (let i = 0; i < clusterarrintial.length; i++){
+                            let temp_x = 0, temp_y=0;
+                            let count = 0;
+                            let centrepointstring = "";
+                            let centrepointlgastring = "";
+                            let centrepointcaseslist = new Array(24).fill(0);
+                            let tempcount = 0;
+                            //var centrepointalllgacode = [];
+
+                            for (let a = 0; a < clusterarrintial[i].length; a ++)
+                            {
+                                //console.log(otherclusterarr[i][a]);
+                                temp_x += Number(clusterarrintial[i][a].geometry.coordinates[0]);
+                                temp_y += Number(clusterarrintial[i][a].geometry.coordinates[1]);
+                                count ++;
+                                let uppername0 = clusterarrintial[i][a].properties.name.toLowerCase();
+                                centrepointstring +=  uppername0 + ", ";
+                                centrepointlgastring += clusterarrintial[i][a].properties.lgacode + "-";
+                                for (let k = 0; k < clusterarrintial[i][a].properties.caseslist.length; k++){
+                                    if (clusterarrintial[i][a].properties.caseslist[k]["Month"] === k + 1){
+                                        centrepointcaseslist[k] += clusterarrintial[i][a].properties.caseslist[k]["cases"];
+                                    }
+                                }
+                                //centrepointalllgacode.push(selectedarr[a].lgacode);
+                            }
+
+                            let centre_coordinates = [temp_y / count, temp_x / count];
+                            //console.log(centre_coordinates);
+                            tempcentrepoint.push({
+                                "name": centrepointstring.substring(0, centrepointstring.length - 2),
+                                "lgacode": templgacodestore,
+                                "coordinates": centre_coordinates,
+                                "caseslist": centrepointcaseslist
+
+                            });
+                            // console.log(temp_x);
+                            // console.log(temp_y);
+                            //console.log(centrepoint);
+                            //console.log();
+                            let templgasum = [];
+                            for (let l = 0; l < centrepointcaseslist.length; l++){
+                                templgasum.push({
+                                    "Month": l + 1,
+                                    "cases": centrepointcaseslist[l],
+                                    "start": 360 / centrepointcaseslist.length * l,
+                                    "end": 360 / centrepointcaseslist.length * (l+1)
+                                });
+                            }
+
+                            tempsaveforeach.push({
+                                "Name": centrepointstring.substring(0, centrepointstring.length - 2),
+                                "LGAcode": centrepointlgastring.substring(0, centrepointlgastring.length - 1),
+                                "caseslist": templgasum,
+                                "status": "clustered",
+                                "timespan": "2020-2022",
+                                "count": clusterarrintial[i].length,
+                                "coordinates": centre_coordinates,
+                            });
+                        }
+
+                        callback(tempsaveforeach);
+
+
+
+
+                    }
+                    function WriteIntialMap(tempsaveforeach){
+                        savetotaldata.push({
+                            "Storageid": storeid,
+                            "mappara": [{
+                                "mapcenter": mapcenter,
+                                "mapzoom": mapzoom,
+                                "clusterradius": mapcurrentSource._options.clusterRadius,
+                                "mapbearing": mapbearing,
+                                "mappitch": mappitch
+                            }],
+                            "Details": tempsaveforeach,
+                            "Timeline": window.timeSelection
+                        })
+                        //
+                        window.totaldataforce = savetotaldata;
+
+                        if(window.dispatchEvent) {
+                            window.dispatchEvent(myEvent);
+                        } else {
+                            window.fireEvent(myEvent);
+                        }
+                        //matrix chart starts
+                        playRects(appendIdStr, window.totaldataforce, styleControler, cols + 1, rectPadding, mapcirclecolor);
+                        // var matrixdata = d3.json("./Data/testmatrix.json", function(error, values) {
+                        //     playRects(appendIdStr, values, styleControler, cols + 1, rectPadding, mapcirclecolor);
+                        // });
+                        //console.log(savetotaldata);
+                    }
+
+                    // Draw();
+                }
+                function OtherRender(){
+                    console.log("do other renders");
+                    //for first render to initialize
+                    var clusterSourcetemp = map.queryRenderedFeatures({ layers: ['lga-center-clustered'] });
+                    tempLGAcenterofMonth = JSON.parse(tempstringLGAcenterofMonth);
+                    mapboxDynamicCluster = [];
+                    CalcAgain(clusterSourcetemp, Drawoutput,  Drawupdate, Allpointset);
+                }
+
+                async function Calc(data, callback1,callback2,callback3) {
+                    //console.log(data);
+                    console.log("do calc");
+                    tempclustersinfo = [];
+                    tempstorelgacode = [];
+                    //document.getElementById('features').innerHTML = "There are " + data.length + " clustered points, they are: ";
+
+                    for (let i = 0; i < data.length; i++) {
+
+                        await CalcSub(data[i])
+
+                    }
+                    console.log("after do calc");
+                    callback1(callback2, callback3);
+                }
+
+                async function CalcAgain(data, callback1,callback2,callback3){
+                    //console.log(data);
+                    console.log("do calc again");
+                    tempclustersinfo = [];
+                    tempstorelgacode = [];
+                    //document.getElementById('features').innerHTML = "There are " + data.length + " clustered points, they are: ";
+                    for (let i = 0; i < data.length; i++) {
+
+                        await CalcSub(data[i])
+
+                    }
+                    console.log("after do calc");
+                    callback1(callback2, callback3);
+                }
+
+                function CalcSub(e){
+
+                    //console.log(e);
+                    return new Promise((resolve,reject)=>{
+
+                        // console.log("do calcsub");
+                        var clusterId = e.properties.cluster_id,
+                            point_count = e.properties.point_count,
+                            clusterSource = map.getSource('lga-center-clustered');
+                        //
+                        // // Get Next level cluster Children
+                        // //
+                        clusterSource.getClusterLeaves(clusterId, point_count, 0, function (err, aFeatures) {
+                            //console.log(aFeatures);
+                            // document.getElementById('features').innerHTML += JSON.stringify(
+                            //     aFeatures,
+                            //     null,
+                            //     2
+                            // ) + ",";
+
+                            mapboxDynamicCluster.push(aFeatures);
+                            //console.log(mapboxDynamicCluster);
+
+                            // console.log("after calcsub");
+                            resolve();
+                            //callback(e);
+                        });
+                        // resolve();
+
+                    });
+                }
+
+                function Drawoutput(callback2,callback3){
+
+                    console.log("draw output")
+                    //console.log(e);
+                    // console.log(tempclustersinfo)
+                    // console.log(tempLGAcenterofMonth)
+
+                    tempclustersinfo = [];
+                    var tempstorelgacode = [];
+                    //console.log(mapboxDynamicCluster);
+                    for (var i = 0; i < mapboxDynamicCluster.length; i++ )
+                    {
+                        var tempclustername = []; //clusters more than one
+                        var tempclusterlgacode = []; //clusters more than one
+                        var count = 1;
+                        var tempsumx = 0;
+                        var tempsumy = 0;
+                        var templgasum = [];
+                        var tempmonth = new Array(maxnumber).fill(0); //coresponding to the maxnumber
+                        for (var j = 0; j < mapboxDynamicCluster[i].length; j++)
+                        {
+                            //console.log(mapboxDynamicCluster[i][j].geometry.coordinates);
+                            tempclustername.push(mapboxDynamicCluster[i][j].properties.name);
+                            tempclusterlgacode.push(mapboxDynamicCluster[i][j].properties.lgacode);
+                            tempsumx += mapboxDynamicCluster[i][j].geometry.coordinates[0];
+                            tempsumy += mapboxDynamicCluster[i][j].geometry.coordinates[1];
+                            count ++;
+                            tempstorelgacode.push(mapboxDynamicCluster[i][j].properties.lgacode);
+
+                            for (var k = 0; k < mapboxDynamicCluster[i][j].properties.caseslist.length; k++)
+                            {
+                                if (mapboxDynamicCluster[i][j].properties.caseslist[k]["Month"] === k + 1)
+                                    tempmonth[k] += mapboxDynamicCluster[i][j].properties.caseslist[k]["cases"];
+
+                                //console.log(mapboxDynamicCluster[i][j].properties.caseslist[k]);
+
+                            }
+                            //console.log(tempmonth);
+                        }
+                        for (var l = 0; l < tempmonth.length; l++){
+                            templgasum.push({
+                                "Month": l + 1,
+                                "cases": tempmonth[l],
+                                "start": 360 / tempmonth.length * l,
+                                "end": 360 / tempmonth.length * (l+1)
+                            });
+                        }
+                        tempclustersinfo.push({
+                            "clusterlgacode" : tempclusterlgacode,
+                            "clustername" : tempclustername,
+                            "coordinates" : [tempsumy/(count - 1), tempsumx/(count - 1)],
+                            "count" : count - 1,
+                            "caseslist": templgasum
+                        });
+                    }
+
+                    //console.log(tempstorelgacode);
+
+                    //var newnodeinfo = [];
+                    for (let i = 0; i < tempstorelgacode.length; i ++)
+                    {
+                        for (let j = 0; j < tempLGAcenterofMonth.features.length; j++)
+                        {
+                            if (tempstorelgacode[i] == tempLGAcenterofMonth.features[j].properties.lgacode)
+                            {
+                                tempLGAcenterofMonth.features.splice(j,1);
+                                j--
+                            }
+                        }
+                    }
+                    // console.log(mapboxDynamicCluster);
+                    // console.log(tempLGAcenterofMonth);
+                    // console.log(LGAcenterofMonth);
+                    // console.log(tempclustersinfo);
+                    console.log("after drawoutput")
+                    callback2(callback3);
+                }
+
+                //console.log(tempclustersinfo);
+
+                function Draw(callback3){
+                    console.log("draw data")
+                    var nodes_clustered = d3.select('#group_nodecluster').selectAll(".node")
+                        .data(tempclustersinfo)
+                        .enter()
+                        .append("g")
+                        .attr('id', function(d, o) {
+                            //console.log(d);
+                            var tempstringlga = "";
+                            for (var i = 0; i < d.clusterlgacode.length; i++){
+                                tempstringlga += d.clusterlgacode[i] + '-';
+                            }
+                            return 'nodecluster-' + tempstringlga;
+                        })
+                        .attr("class", "node")
+                        .attr("transform", function(data) {
+                            //console.log(data);
+                            return "translate(" + project(data.coordinates).x + "," + project(data.coordinates).y + ")";
+                        });
+                    nodes_clustered.each(function(temp) {
+                        // var pieflag = 0;
+                        //console.log(temp);
+                        //draw piesymbol
+                        var tempstringlgacode = "";
+                        for (var i = 0; i < temp.clusterlgacode.length; i++){
+                            tempstringlgacode += temp.clusterlgacode[i] + '-';
+                        }
+                        var piesymbol_cluster = d3.select('#nodecluster-' + tempstringlgacode).selectAll("path");
+                        //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                        piesymbol_cluster
+                            .data(function (d) {
+                                //console.log(d);
+                                return pie(d.caseslist);
+                            })
+                            .enter()
+                            .append("path")
+                            .attr("d", arc)
+                            .attr('id', function(d, o) {
+                                //console.log(d);
+                                //console.log(o);
+                                return 'piebar-' + o;
+                            })
+                            .style("fill", function(d) {
+                                //console.log(d);
+                                if ( d.data.cases === 0)
+                                    return ColorGrey[0];
+                                else
+                                    return Flowercolorpannel[0];
+                            })
+                            //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                            .style("stroke-width", 1)
+                            .style("stroke", "white")
+
+                            .on("mousemove",function(d,o){
+                            })
+
+                    });
+
+                    //console.log(tempLGAcenterofMonth);
+
+                    var dots_unclustered = d3.select('#group_nodeuncluster').selectAll("circle")
+                        .data(LGAcenterofMonth.features)
+                        .enter()
+                        .append("circle")
+                        .attr('id', function(d) {
+                            //console.log(d);
+                            return 'circleuncluster-' + d.properties.lgacode
+                        })
+                        .attr("r", 1)
+                        .attr("stroke", "#636363")
+                        .attr("stroke-dasharray", 0.5)
+                        .attr("fill", "#ffffff")
+                        .attr("fill-opacity", 0)
+                        .attr("cx", function(data) {
+                            return project(data.properties.geo_point_2d).x;
+                        })
+                        .attr("cy", function(data) {
+                            return project(data.properties.geo_point_2d).y;
+                        })
+                        .on("click", function (d){
+                            if (d3.event.defaultPrevented) {
+                                return;
+                            }
+                            //console.log(d);
+                        })
+                        .on("mousemove", function (d) {
+                            //console.log(d);
+                            //divlegend.style("display","none");
+                            let tempstringformonthdata = ""
+                            let count = 0;
+                            for (let i = 0; i < d.properties.caseslist.length; i++){
+                                tempstringformonthdata += "Month:" + d.properties.caseslist[i].Month + ", Cases:" + d.properties.caseslist[i].cases + "</br>";
+                                count ++;
+                            }
+
+                            // divlegend.html("Name: "+ d.properties.name +"</br> LGAcode: "+  d.properties.lgacode +"</br>" + tempstringformonthdata)
+                            //
+                            //     .style("left", (d3.event.pageX+12) + "px")
+                            //     .style("top", (d3.event.pageY-10) + "px")
+                            //     .style("opacity", 0.8)
+                            //     .style("height", function(){
+                            //         //console.log(tempevents);
+                            //         return 22 * (count + 1) + 'px';
+                            //     })
+                            //     .style("display","block");
+                        })
+                        .on("mouseout",function(d,o){
+                            //divlegend.style("display","none");
+
+                        });
+
+                    var nodes_unclustered = d3.select('#group_nodeuncluster').selectAll(".node")
+                        .data(tempLGAcenterofMonth.features)
+                        .enter()
+                        .append("g")
+                        .attr('id', function(d, i) {
+                            return 'nodeuncluster-' + d.properties.lgacode
+                        })
+                        .attr("class", "node")
+                        .attr("transform", function(data) {
+                            //console.log(data);
+                            return "translate(" + project(data.properties.geo_point_2d).x + "," + project(data.properties.geo_point_2d).y + ")";
+                        });
+                    var piesymbol_uncluster;
+                    nodes_unclustered.each(function(temp) {
+                        // var pieflag = 0;
+                        //console.log(temp);
+                        //draw piesymbol
+                        piesymbol_uncluster = d3.select('#nodeuncluster-' + temp.properties.lgacode).selectAll("path");
+                        //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                        piesymbol_uncluster
+                            .data(function (d) {
+                                //console.log(d);
+                                return pie(d.properties.caseslist);
+                            })
+                            .enter()
+                            .append("path")
+                            .attr("d", arc)
+                            .attr('id', function(d, o) {
+                                //console.log(d);
+                                //console.log(o);
+                                return 'piebar-' + o;
+                            })
+                            .style("fill", function(d) {
+                                //console.log(d);
+                                if ( d.data.cases === 0)
+                                    return ColorGrey[0];
+                                else
+                                    return Flowercolorpannel[0];
+                            })
+                            //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                            .style("stroke-width", 1)
+                            .style("stroke", "white")
+                            .on("mousemove",function(d,o){
+                                // console.log(d);
+                                // console.log(o);
+                            })
+
+                    });
+                    console.log("after draw data")
+                    callback3();
+
+                }
+
+                function Drawupdate(){
+                    console.log("draw data updated")
+                    //console.log(mapboxDynamicCluster); //all cluster points
+                    // console.log(tempLGAcenterofMonth); //all unclustered points
+                    // console.log(LGAcenterofMonth); // all point data
+                    // console.log(tempclustersinfo); // all cluster details
+
+                    d3.select('#group_nodecluster').selectAll(".node").remove();
+                    d3.select('#group_nodeuncluster').selectAll(".node").remove();
+                    var nodes_clustered = d3.select('#group_nodecluster').selectAll(".node")
+                        .data(tempclustersinfo)
+                        .enter()
+                        .append("g")
+                        .attr('id', function(d, o) {
+                            //console.log(d);
+                            var tempstringlga = "";
+                            for (var i = 0; i < d.clusterlgacode.length; i++){
+                                tempstringlga += d.clusterlgacode[i] + '-';
+                            }
+                            return 'nodecluster-' + tempstringlga;
+                        })
+                        .attr("class", "node")
+                        .attr("transform", function(data) {
+                            //console.log(data);
+                            return "translate(" + project(data.coordinates).x + "," + project(data.coordinates).y + ")";
+                        });
+                    nodes_clustered.each(function(temp) {
+                        // var pieflag = 0;
+                        //console.log(temp);
+                        //draw piesymbol
+                        var tempstringlgacode = "";
+                        for (var i = 0; i < temp.clusterlgacode.length; i++){
+                            tempstringlgacode += temp.clusterlgacode[i] + '-';
+                        }
+                        var piesymbol_cluster = d3.select('#nodecluster-' + tempstringlgacode).selectAll("path");
+                        //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                        piesymbol_cluster
+                            .data(function (d) {
+                                //console.log(d);
+                                return pie(d.caseslist);
+                            })
+                            .enter()
+                            .append("path")
+                            .attr("d", arc)
+                            .attr('id', function(d, o) {
+                                //console.log(d);
+                                //console.log(o);
+                                return 'piebar-' + o;
+                            })
+                            .style("fill", function(d) {
+                                //console.log(d);
+                                if ( d.data.cases === 0)
+                                    return ColorGrey[0];
+                                else
+                                    return Flowercolorpannel[0];
+                            })
+                            //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                            .style("stroke-width", 1)
+                            .style("stroke", "white")
+                            .on("mousemove",function(d,o){
+                            })
+
+                    });
+
+                    var nodes_unclustered = d3.select('#group_nodeuncluster').selectAll(".node")
+                        .data(tempLGAcenterofMonth.features)
+                        .enter()
+                        .append("g")
+                        .attr('id', function(d, i) {
+                            return 'nodeuncluster-' + d.properties.lgacode
+                        })
+                        .attr("class", "node")
+                        .attr("transform", function(data) {
+                            //console.log(data);
+                            return "translate(" + project(data.properties.geo_point_2d).x + "," + project(data.properties.geo_point_2d).y + ")";
+                        });
+                    var piesymbol_uncluster;
+                    nodes_unclustered.each(function(temp) {
+                        // var pieflag = 0;
+                        //console.log(temp);
+                        //draw piesymbol
+                        piesymbol_uncluster = d3.select('#nodeuncluster-' + temp.properties.lgacode).selectAll("path");
+                        //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                        piesymbol_uncluster
+                            .data(function (d) {
+                                //console.log(d);
+                                return pie(d.properties.caseslist);
+                            })
+                            .enter()
+                            .append("path")
+                            .attr("d", arc)
+                            .attr('id', function(d, o) {
+                                //console.log(d);
+                                //console.log(o);
+                                return 'piebar-' + o;
+                            })
+                            .style("fill", function(d) {
+                                //console.log(d);
+                                if ( d.data.cases === 0)
+                                    return ColorGrey[0];
+                                else
+                                    return Flowercolorpannel[0];
+                            })
+                            //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                            .style("stroke-width", 1)
+                            .style("stroke", "white")
+                            .on("mousemove",function(d,o){
+                                // console.log(d);
+                                // console.log(o);
+                            })
+
+                    });
+                    //console.log(tempnode);
+                    //console.log(piesymbol_uncluster);
+
+
+                    //disvisible grouped LGAs
+                    //console.log(templgacodestore);
+                    for (let i = 0; i < templgacodestore.length; i ++){
+
+                        var tempstringlgacode = templgacodestore[i] + '-';
+                        var len = tempstringlgacode.split("-").length-1
+                        if (len > 1){
+                            var piesymbol_cluster = d3.select('#nodecluster-' + tempstringlgacode).selectAll("path");
+                            //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                            piesymbol_cluster.style("opacity", 0)
+                        }
+                        else{
+                            var piesymbol_uncluster = d3.select('#nodeuncluster-' + templgacodestore[i]).selectAll("path");
+                            piesymbol_uncluster.style("opacity", 0)
+                        }
+
+                    }
+
+                }
+
+                function updateAreaAfterDelete(e){
+                    console.log("draw data updated")
+                    //console.log(mapboxDynamicCluster); //all cluster points
+                    // console.log(tempLGAcenterofMonth); //all unclustered points
+                    // console.log(LGAcenterofMonth); // all point data
+                    // console.log(tempclustersinfo); // all cluster details
+
+                    d3.select('#group_nodecluster').selectAll(".node").remove();
+                    d3.select('#group_nodeuncluster').selectAll(".node").remove();
+                    d3.select('#group_nodeselect').remove();
+                    var nodes_clustered = d3.select('#group_nodecluster').selectAll(".node")
+                        .data(tempclustersinfo)
+                        .enter()
+                        .append("g")
+                        .attr('id', function(d, o) {
+                            //console.log(d);
+                            var tempstringlga = "";
+                            for (var i = 0; i < d.clusterlgacode.length; i++){
+                                tempstringlga += d.clusterlgacode[i] + '-';
+                            }
+                            return 'nodecluster-' + tempstringlga;
+                        })
+                        .attr("class", "node")
+                        .attr("transform", function(data) {
+                            //console.log(data);
+                            return "translate(" + project(data.coordinates).x + "," + project(data.coordinates).y + ")";
+                        });
+                    nodes_clustered.each(function(temp) {
+                        // var pieflag = 0;
+                        //console.log(temp);
+                        //draw piesymbol
+                        var tempstringlgacode = "";
+                        for (var i = 0; i < temp.clusterlgacode.length; i++){
+                            tempstringlgacode += temp.clusterlgacode[i] + '-';
+                        }
+                        var piesymbol_cluster = d3.select('#nodecluster-' + tempstringlgacode).selectAll("path");
+                        //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                        piesymbol_cluster
+                            .data(function (d) {
+                                //console.log(d);
+                                return pie(d.caseslist);
+                            })
+                            .enter()
+                            .append("path")
+                            .attr("d", arc)
+                            .attr('id', function(d, o) {
+                                //console.log(d);
+                                //console.log(o);
+                                return 'piebar-' + o;
+                            })
+                            .style("fill", function(d) {
+                                //console.log(d);
+                                if ( d.data.cases === 0)
+                                    return ColorGrey[0];
+                                else
+                                    return Flowercolorpannel[0];
+                            })
+                            //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                            .style("stroke-width", 1)
+                            .style("stroke", "white")
+                            .on("mousemove",function(d,o){
+                            })
+
+                    });
+
+                    var nodes_unclustered = d3.select('#group_nodeuncluster').selectAll(".node")
+                        .data(tempLGAcenterofMonth.features)
+                        .enter()
+                        .append("g")
+                        .attr('id', function(d, i) {
+                            return 'nodeuncluster-' + d.properties.lgacode
+                        })
+                        .attr("class", "node")
+                        .attr("transform", function(data) {
+                            //console.log(data);
+                            return "translate(" + project(data.properties.geo_point_2d).x + "," + project(data.properties.geo_point_2d).y + ")";
+                        });
+                    var piesymbol_uncluster;
+                    nodes_unclustered.each(function(temp) {
+                        // var pieflag = 0;
+                        //console.log(temp);
+                        //draw piesymbol
+                        piesymbol_uncluster = d3.select('#nodeuncluster-' + temp.properties.lgacode).selectAll("path");
+                        //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                        piesymbol_uncluster
+                            .data(function (d) {
+                                //console.log(d);
+                                return pie(d.properties.caseslist);
+                            })
+                            .enter()
+                            .append("path")
+                            .attr("d", arc)
+                            .attr('id', function(d, o) {
+                                //console.log(d);
+                                //console.log(o);
+                                return 'piebar-' + o;
+                            })
+                            .style("fill", function(d) {
+                                //console.log(d);
+                                if ( d.data.cases === 0)
+                                    return ColorGrey[0];
+                                else
+                                    return Flowercolorpannel[0];
+                            })
+                            //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                            .style("stroke-width", 1)
+                            .style("stroke", "white")
+                            .on("mousemove",function(d,o){
+                                // console.log(d);
+                                // console.log(o);
+                            })
+
+                    });
+                }
+
+                function updateArea(e) {
+
+                    // var data = draw.getAll();
+                    var clusterstring = "";
+                    var unclusterstring = "";
+                    var otherclusterstring = "";
+                    clusterarr = [];
+                    //otherclusterarr = [];
+                    var selectedarr = [];
+
+                    //Query selected elements
+                    var draw_polygon = turf.bbox(e.features[0]);
+                    var southWest = [draw_polygon[0], draw_polygon[1]];
+                    var northEast = [draw_polygon[2], draw_polygon[3]];
+
+                    var northEastPointPixel = map.project(northEast);
+                    var southWestPointPixel = map.project(southWest);
+                    // var test_polygon = turf.polygon(e.features[0]);
+                    // var temppolygontoPointPixel = [];
+                    // var temppolygontoTurfPolygon = [];
+                    // for (var t = 0; t < test_polygon.geometry.coordinates.geometry.coordinates[0].length; t++){
+                    //     var tempset = test_polygon.geometry.coordinates.geometry.coordinates[0][t];
+                    //     var tempsetx = test_polygon.geometry.coordinates.geometry.coordinates[0][t][0];
+                    //     var tempsety = test_polygon.geometry.coordinates.geometry.coordinates[0][t][1];
+                    //     temppolygontoPointPixel.push(map.project(tempset));
+                    //     temppolygontoTurfPolygon.push(tempset);
+                    // }
+                    //
+                    //
+                    // console.log(test_polygon);
+                    //
+                    // console.log(temppolygontoTurfPolygon);
+                    //
+                    // console.log(LGAcenterforD3);
+                    //
+                    // var CalGroupedPoint = [];
+                    // var temppoly = turf.polygon(temppolygontoPointPixel);
+                    // console.log(temppoly)
+                    // for (var i = 0; i < LGAcenterforD3.features.length; i++){
+                    //     console.log(LGAcenterforD3.features[i].properties);
+                    //     // var tempcenter = [LGAcenterforD3.features[i].properties.geo_point_2d[1],LGAcenterforD3.features[i].properties.geo_point_2d[0]];
+                    //     console.log(tempcenter);
+                    //     if (turf.booleanPointInPolygon(turf.point(tempcenter), temppoly)){
+                    //         CalGroupedPoint.push(LGAcenterforD3.features[i]);
+                    //     }
+                    // }
+                    // console.log(CalGroupedPoint);
+
+                    var features_cluster = map.queryRenderedFeatures([southWestPointPixel, northEastPointPixel], { layers: ['lga-center-clustered'] });
+                    var features_uncluster = map.queryRenderedFeatures([southWestPointPixel, northEastPointPixel], { layers: ['lga-center-unclustered'] });
+                    if ((features_uncluster.length === 0) && (features_cluster.length === 0) ) {
+                        return;
+                    }
+
+                    if (tickflag === 0){
+                        var features_allcluster = map.queryRenderedFeatures({ layers: ['lga-center-clustered'] });
+                        var features_alluncluster = map.queryRenderedFeatures({ layers: ['lga-center-unclustered'] });
+                        console.log(tickflag, clusterdiff, unclusterdiff);
+                        tickflag = 1;
+                    }
+                    else
+                    {
+                        var features_allcluster = clusterdiff;
+                        var features_alluncluster = unclusterdiff;
+                        console.log(tickflag, clusterdiff, unclusterdiff);
+                    }
+
+
+
+                    // var features_cluster = map.queryRenderedFeatures(temppolygontoPointPixel, { layers: ['lga-center-clustered'] });
+                    // var features_uncluster = map.queryRenderedFeatures(temppolygontoPointPixel, { layers: ['lga-center-unclustered'] });
+
+                    console.log(features_cluster);
+                    console.log(features_uncluster);
+                    console.log(features_allcluster);
+                    console.log(features_alluncluster);
+
+                    clusterdiff = getDifferenceSet(features_cluster, features_allcluster, 'id');
+                    unclusterdiff = getDifferenceSetLGAcode(features_uncluster, features_alluncluster);
+                    console.log(clusterdiff);
+                    console.log(unclusterdiff);
+
+                    // if ((features_cluster.length == 0) && (features_uncluster.length > 0)){
+                    //
+                    // }
+
+                    // if ((features_uncluster.length > 0) || (features_cluster.length > 0) ){
+                    //     unclusterstring = JSON.stringify(
+                    //         features_uncluster,
+                    //         null,
+                    //         2
+                    //     );
+                    // }
+                    // console.log(features_cluster);
+                    // console.log(features_uncluster);
+                    //console.log(features_uncluster);
+                    var selectcallBack = function(clusterdiff, unclusterdiff, clusterarr, features_uncluster, callback) {
+                        //后续处理
+                        console.log("selectcallback");
+                        console.log(features_uncluster);
+                        console.log(clusterarr);
+                        mapsavegroups = [];
+                        //document.getElementById('features').innerHTML = JSON.stringify(clusterarr,null, 2) + unclusterstring;
+
+                        var templgacodeset = [];
+                        var tempmontheach = new Array(24).fill(0);
+                        //templgacodestore = [];
+
+                        for (var x = 0; x < features_uncluster.length; x ++){
+                            var uppername = features_uncluster[x].properties.name.toLowerCase();
+                            selectedarr.push({
+                                "name": uppername.charAt(0).toUpperCase() + uppername.slice(1),
+                                "coordinates": features_uncluster[x].geometry.coordinates,
+                                "status": "unclustered",
+                                "caseslist": JSON.parse(features_uncluster[x].properties.caseslist),
+                                "lgacode": features_uncluster[x].properties.lgacode
+                            });
+                            templgacodeset.push({
+                                "lgacode": features_uncluster[x].properties.lgacode,
+                                "caseslist": JSON.parse(features_uncluster[x].properties.caseslist)
+                            });
+                            templgacodestore.push(features_uncluster[x].properties.lgacode);
+
+                        }
+
+                        for (var i = 0; i < clusterarr.length; i ++){
+                            var tempstring = "";
+                            var tempmonth = new Array(24).fill(0);
+                            for (var j = 0; j < clusterarr[i].length; j ++)
+                            {
+                                var uppername = clusterarr[i][j].properties.name.toLowerCase();
+                                selectedarr.push({
+                                    "name": uppername.charAt(0).toUpperCase() + uppername.slice(1),
+                                    "coordinates": clusterarr[i][j].geometry.coordinates,
+                                    "status": "clustered",
+                                    "caseslist": clusterarr[i][j].properties.caseslist,
+                                    "lgacode": clusterarr[i][j].properties.lgacode
+                                });
+                                tempstring += clusterarr[i][j].properties.lgacode + "-";
+                                for (var k = 0; k < clusterarr[i][j].properties.caseslist.length; k++){
+                                    if (clusterarr[i][j].properties.caseslist[k]["Month"] === k + 1)
+                                        tempmonth[k] += clusterarr[i][j].properties.caseslist[k]["cases"];
+                                }
+
+                            }
+                            templgacodeset.push({
+                                "lgacode": tempstring.substring(0, tempstring.length - 1),
+                                "caseslist": tempmonth
+                            });
+                            templgacodestore.push(tempstring.substring(0, tempstring.length - 1));
+
+                        }
+                        console.log(selectedarr);
+                        mapsavegroups.push(selectedarr);
+                        console.log(mapsavegroups);
+
+
+                        for (var i = 0; i < mapsavegroups.length; i++){
+                            var temp_x = 0, temp_y=0;
+                            var count = 0;
+                            var centrepointstring = "";
+                            var centrepointlgastring = "";
+                            var centrepointcaseslist = new Array(24).fill(0);
+                            //var centrepointalllgacode = [];
+
+                            for (let a = 0; a < mapsavegroups[i].length; a ++)
+                            {
+                                //console.log(selectedarr[a]);
+                                temp_x += Number(mapsavegroups[i][a].coordinates[0]);
+                                temp_y += Number(mapsavegroups[i][a].coordinates[1]);
+                                count ++;
+                                centrepointstring += mapsavegroups[i][a].name + ", ";
+                                centrepointlgastring += mapsavegroups[i][a].lgacode + "-";
+                                for (let k = 0; k < mapsavegroups[i][a].caseslist.length; k++){
+                                    if (mapsavegroups[i][a].caseslist[k]["Month"] === k + 1){
+                                        if (mapsavegroups[i][a].status === "unclustered"){
+                                            centrepointcaseslist[k] += mapsavegroups[i][a].caseslist[k]["cases"];
+                                        }
+                                        else
+                                        {
+                                            centrepointcaseslist[k] += mapsavegroups[i][a].caseslist[k]["cases"];
+                                        }
+                                    }
+                                }
+                                //centrepointalllgacode.push(selectedarr[a].lgacode);
+                            }
+
+                            var centre_coordinates = [temp_y / count, temp_x / count];
+                            //console.log(centre_coordinates);
+                            centrepoint.push({
+                                "name": centrepointstring.substring(0, centrepointstring.length - 2),
+                                "lgacode": templgacodestore,
+                                "coordinates": centre_coordinates,
+                                "caseslist": centrepointcaseslist
+
+                            });
+                            // console.log(temp_x);
+                            // console.log(temp_y);
+                            //console.log(centrepoint);
+                            //console.log();
+                            var templgasum = [];
+                            for (var l = 0; l < centrepointcaseslist.length; l++){
+                                templgasum.push({
+                                    "Month": l + 1,
+                                    "cases": centrepointcaseslist[l],
+                                    "start": 360 / centrepointcaseslist.length * l,
+                                    "end": 360 / centrepointcaseslist.length * (l+1)
+                                });
+                            }
+
+                            finalcenterpoint.push({
+                                "clusterlgacode" : centrepointlgastring.substring(0, centrepointlgastring.length - 1),
+                                "clustername" : centrepointstring.substring(0, centrepointstring.length - 2),
+                                "coordinates" : centre_coordinates,
+                                "count": selectedarr.length,
+                                "caseslist": templgasum
+                            });
+
+                            //console.log(project(centrepoint[0].coordinates)); //centre of calculate point
+                        }
+
+                        deWeightCluster(finalcenterpoint);
+                        console.log(finalcenterpoint);
+                        console.log(features_uncluster);
+                        console.log(clusterarr);
+                        console.log(otherclusterarr);
+
+                        for (let i = 0; i < templgacodestore.length; i ++){
+
+                            var tempstringlgacode = templgacodestore[i] + '-';
+                            var len = tempstringlgacode.split("-").length-1
+                            if (len > 1){
+                                var piesymbol_cluster = d3.select('#nodecluster-' + tempstringlgacode).selectAll("path");
+                                //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                                piesymbol_cluster.style("opacity", 0)
+                            }
+                            else{
+                                var piesymbol_uncluster = d3.select('#nodeuncluster-' + templgacodestore[i]).selectAll("path");
+                                piesymbol_uncluster.style("opacity", 0)
+                            }
+
+                        }
+
+                        // .attr("cx", project(centrepoint.coordinates).x)
+                        // .attr("cy", project(centrepoint.coordinates).y)
+
+                        //console.log(centredot);
+                        // console.log(dots);
+                        //render();
+
+                        //计算筛选后的clustered包含的数据
+                        var c = 0;
+                        otherclusterarr = [];
+                        for (var b = 0; b < clusterdiff.length; b++) {
+                            //console.log(clusterdiff.length);
+                            //console.log(features_cluster[i]);
+                            var clusterId = clusterdiff[b].properties.cluster_id,
+                                point_count = clusterdiff[b].properties.point_count,
+                                clusterSource = map.getSource('lga-center-clustered');
+                            //console.log(clusterSource);
+                            // Get all points under a cluster
+
+                            var pt= clusterSource.getClusterLeaves(clusterId, point_count, 0, (err, aFeatures) =>{
+                                otherclusterarr.push(aFeatures);
+                                console.log('here3')
+                                // console.log(clusterarr);
+                                //console.log(clusterarr);
+                                c ++;
+                                //console.log(j);
+                                if (clusterdiff.length === c ){
+                                    console.log('here4')
+                                    // console.log(clusterarr);
+                                    setTimeout(callback(), 100)
+                                    //return;
+                                }
+
+                            })
+                            //console.log(i);
+                            // console.log(pt)
+
+                        }
+                        //setTimeout(callback(), 0)
+
+
+
+                    }
+
+                    var DrawSelectCallBack = function(){
+                        console.log("Drawselectcallback");
+
+                        var centredot = group_select.selectAll("circle")
+                            .data(finalcenterpoint)
+                            .enter()
+                            .append("circle")
+                            .attr("r", 4)
+                            .attr("stroke", "#636363")
+                            .attr("stroke-dasharray", 0.5)
+                            .attr("fill", "#e69e19")
+                            .attr("fill-opacity", 0.6)
+                            //
+                            .attr("cx", function(data) {
+                                //console.log(data);
+                                return project(data.coordinates).x;
+                            })
+                            .attr("cy", function(data) {
+                                return project(data.coordinates).y;
+                            })
+                            .on("mousemove", function (d) {
+                                //console.log(d);
+                                var templgaarr = d.clusterlgacode.split("-");;
+                                map.setFilter('polygon-highlighted', ['in', 'lgacode', ...templgaarr]);
+                            })
+                            .on("mouseout",function(d,o){
+                                map.setFilter('polygon-highlighted', ['in', 'lgacode', '']);
+                            });
+
+
+                        var nodes_selected = group_select.selectAll(".node")
+                            .data(finalcenterpoint)
+                            .enter()
+                            .append("g")
+                            .attr('id', function(d, o) {
+                                return 'nodeselect-' + d.clusterlgacode;
+                            })
+                            .attr("class", "node")
+                            .attr("transform", function(data) {
+                                //console.log(data);
+                                return "translate(" + project(data.coordinates).x + "," + project(data.coordinates).y + ")";
+                            });
+
+                        nodes_selected.each(function(temp) {
+                            // var pieflag = 0;
+                            //console.log(temp);
+                            //draw piesymbol
+                            var tempstringlgacode = temp.clusterlgacode;
+                            var piesymbol_cluster = d3.select('#nodeselect-' + tempstringlgacode).selectAll("path");
+                            //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+                            piesymbol_cluster
+                                .data(function (d) {
+                                    //console.log(d);
+                                    return pie(d.caseslist);
+                                })
+                                .enter()
+                                .append("path")
+                                .attr("d", arc)
+                                .attr('id', function(d, o) {
+                                    //console.log(d);
+                                    //console.log(o);
+                                    return 'piebar-' + o;
+                                })
+                                .style("fill", function(d) {
+                                    //console.log(d);
+                                    if ( d.data.cases === 0)
+                                        return ColorGrey[0];
+                                    else
+                                        return Flowercolorpannel[0];
+                                })
+                                //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                                .style("stroke-width", 1)
+                                .style("stroke", "white")
+                                .on("mousemove",function(d,o){
+                                })
+                        });
+                    }
+
+                    if ((features_cluster.length > 0) || (features_uncluster.length > 0)){
+                        console.log(features_uncluster);
+                        console.log(features_cluster);
+                        Findclusterbycallback(clusterdiff, unclusterdiff, features_cluster, features_uncluster, selectcallBack, DrawSelectCallBack)
+
+                    }
+
+
+                }
+                function Findclusterbycallback(clusterdiff, unclusterdiff, features_cluster, features_uncluster, callBack1, callback2){
+                    console.log('Findclusterbycallback');
+                    //console.log(features_uncluster);
+                    //clusterstring = '';
+                    var j = 0;
+                    if (features_cluster.length > 0){
+                        for (var i = 0; i < features_cluster.length; i++) {
+                            console.log(features_cluster.length);
+                            //console.log(features_cluster[i]);
+                            var clusterId = features_cluster[i].properties.cluster_id,
+                                point_count = features_cluster[i].properties.point_count,
+                                clusterSource = map.getSource('lga-center-clustered');
+                            //console.log(clusterSource);
+                            // Get all points under a cluster
+
+                            var pt= clusterSource.getClusterLeaves(clusterId, point_count, 0, (err, aFeatures) =>{
+                                clusterarr.push(aFeatures);
+                                console.log('here')
+                                // console.log(clusterarr);
+                                //console.log(clusterarr);
+                                j ++;
+                                //console.log(j);
+                                if (features_cluster.length === j ){
+                                    console.log('here2')
+                                    // console.log(clusterarr);
+                                    setTimeout(callBack1(clusterdiff, unclusterdiff, clusterarr, features_uncluster, callback2), 200)
+                                    //clearInterval(ss);
+                                    //return;
+                                }
+                                //console.log('getClusterLeaves', err, aFeatures);
+                                // clusterstring += JSON.stringify(
+                                //     aFeatures,
+                                //     null,
+                                //     2
+                                // );
+                            })
+                            //console.log(i);
+                            // console.log(pt)
+
+                        }
+                    }
+                    if ((features_uncluster.length >0) && (features_cluster.length == 0)){
+                        callBack1(clusterdiff, unclusterdiff, clusterarr, features_uncluster, callback2)
+                    }
+
+                    //setTimeout(callBack1(clusterdiff, unclusterdiff, clusterarr, callback2), 0)
+
+                    //setTimeout(callBack1(clusterarr, callback2), 0);
+                }
+
+
+                //
+                // function UpdateAreaCal(callback1, drawcallback1){
+                //
+                //     var features_othercluster = map.queryRenderedFeatures({ layers: ['lga-center-clustered'] });
+                //     console.log(features_othercluster);
+                //     otherclusterstring = ''
+                //     for (var a = 0; a < features_othercluster.length; a++) {
+                //         //console.log(features_cluster[i]);
+                //         var clusterId = features_othercluster[a].properties.cluster_id,
+                //             point_count = features_othercluster[a].properties.point_count,
+                //             otherclusterSource = map.getSource('lga-center-clustered');
+                //         //console.log(clusterSource);
+                //         // Get all points under a cluster
+                //
+                //         otherclusterSource.getClusterLeaves(clusterId, point_count, 0, (err, aFeatures) =>{
+                //             otherclusterarr.push(aFeatures);
+                //             //console.log(aFeatures);
+                //             //console.log('getClusterLeaves', err, aFeatures);
+                //             otherclusterstring += JSON.stringify(
+                //                 aFeatures,
+                //                 null,
+                //                 2
+                //             );
+                //         })
+                //         //console.log(i);
+                //         //console.log(clusterarr);
+                //         if (otherclusterstring.length -1 === i ){
+                //             setTimeout(callBack, 100)
+                //             //clearInterval(ss);
+                //             return;
+                //         }
+                //     }
+                //
+                //     console.log(otherclusterarr);
+                //
+                //
+                // }
+
+                //FirstRender();
+                console.log('A load event occurred.');
+                map.once('idle', ()=>{
+                    FirstRender(); // Call once to render
+                    console.log('An initial render done.');
+                })
+                // map.on('idle', ()=>{
+                //     OtherRender();
+                //     console.log('An idle event occurred.');
+                // })
+
+                //
+                map.on('move', ()=>{
+                    Allpointset();
+                    console.log('A move event occurred.');
+                })
+
+                map.on('mouseout', 'lga-center-clustered', () => {
+                    map.setFilter('polygon-highlighted', ['in', 'lgacode', '']);
+                });
+
+                map.on("moveend", function (e) {
+                    OtherRender();
+                    console.log('A move end event occurred.');
+                })
+
+                map.on('mousemove', 'lga-center-clustered', (e) => {
+                    //console.log(e.point);
+                    // map.getCanvas().style.cursor = 'pointer';
+                    var mapboxHighlightPolygonPoints = [];
+                    var mousemovefeatures = map.queryRenderedFeatures(e.point, {
+                        layers: ['lga-center-clustered']
+                    })
+                    console.log(mousemovefeatures)
+                    QueryHighlightPolygons(mapboxHighlightPolygonPoints, mousemovefeatures[0], Polygonscallback, PolygonscallbackAgain);
+                });
+
+                function QueryHighlightPolygons(mapboxHighlightPolygonPoints, e, callback1, callback2){
+                    console.log('query highlight');
+
+                    return new Promise((resolve,reject)=>{
+
+                        // console.log("do calcsub");
+                        var clusterId = e.properties.cluster_id,
+                            point_count = e.properties.point_count,
+                            clusterSource = map.getSource('lga-center-clustered');
+                        //
+                        // // Get Next level cluster Children
+                        // //
+                        clusterSource.getClusterLeaves(clusterId, point_count, 0, function (err, aFeatures) {
+                            //console.log(aFeatures);
+
+                            mapboxHighlightPolygonPoints.push(aFeatures);
+                            //console.log(mapboxDynamicCluster);
+
+                            // console.log("after calcsub");
+                            resolve();
+                            console.log("run hightlight promise");
+                            callback1(mapboxHighlightPolygonPoints, callback2);
+                            //callback(e);
+                        });
+                    });
+                }
+
+                async function Polygonscallback(mapboxHighlightPolygonPoints, callback2){
+                    console.log('query highlight callback');
+                    //console.log(mapboxHighlightPolygonPoints);
+                    mapboxtempPolygonPoints = [];
+                    for (let i = 0; i < mapboxHighlightPolygonPoints[0].length; i++) {
+
+                        await PolygonsFind(mapboxHighlightPolygonPoints[0][i])
+
+                    }
+                    callback2(mapboxtempPolygonPoints);
+                }
+
+                function PolygonsFind(data){
+                    console.log('find highlight polygons');
+                    //console.log(data);
+                    var temp = projectxy(data.geometry.coordinates);
+                    var tempfeatures = map.queryRenderedFeatures(temp, {
+                        layers: ['polygon-fill']
+                    })
+                    //console.log(tempfeatures[0]);
+
+                    mapboxtempPolygonPoints.push(tempfeatures[0]);
+                    //console.log(mapboxtempPolygonPoints);
+
+                }
+                function PolygonscallbackAgain(data){
+                    console.log('query highlight callback again');
+                    //console.log(mapboxtempPolygonPoints);
+                    var templgacodes = [];
+                    for (let i = 0; i < mapboxtempPolygonPoints.length; i++){
+                        templgacodes.push(mapboxtempPolygonPoints[i].properties.lgacode)
+                    }
+                    //console.log(templgacodes);
+
+                    map.setFilter('polygon-highlighted', ['in', 'lgacode', ...templgacodes]);
+                }
+
+
+
+                function Allpointset() {
+
+                    group_select.selectAll("circle")
+                        .attr("cx", function(data) {
+                            //console.log(data);
+                            return project(data.coordinates).x;
+                        })
+                        .attr("cy", function(data) {
+                            return project(data.coordinates).y;
+                        })
+                    group_select.selectAll("circle")
+                        .on('click', function (params){
+                            if (d3.event.defaultPrevented) {
+                                return;
+                            }
+                            console.log(params);
+                        })
+                    group_select.selectAll(".node")
+                        .attr("transform", function (data) {
+                            //console.log(data);
+                            return "translate(" + project(data.coordinates).x + "," + project(data.coordinates).y + ")";
+                        });
+
+                    d3.select('#group_nodecluster').selectAll(".node")
+                        .attr("transform", function (data) {
+                            //console.log(data);
+                            return "translate(" + project(data.coordinates).x + "," + project(data.coordinates).y + ")";
+                        });
+
+                    d3.select('#group_nodeuncluster').selectAll(".node")
+                        .attr("transform", function(data) {
+                            //console.log(data);
+                            return "translate(" + project(data.properties.geo_point_2d).x + "," + project(data.properties.geo_point_2d).y + ")";
+                        });
+
+                    d3.select('#group_nodeuncluster').selectAll("circle")
+                        .attr("cx", function(data) {
+                            return project(data.properties.geo_point_2d).x;
+                        })
+                        .attr("cy", function(data) {
+                            return project(data.properties.geo_point_2d).y;
+                        });
+
+                    console.log('All points set.');
+                }
+
+
+                //timelinechart timeline图
+                var timelinedata = [{
+                    "label": "Argentina",
+                    "isIncluded": true,
+                    "times": [{
+                        "text": "",
+                        "starting_time": Date.parse('2020-01-14'),
+                        "ending_time": Date.parse('2020-05-30')
+                    }],
+                    "classification": "1"
+                },
+                    {
+                        "label": "Bolivia",
+                        "isIncluded": true,
+                        "times": [{
+                            "text": "",
+                            "starting_time": Date.parse('2020-01-17'),
+                            "ending_time": Date.parse('2020-06-28')
+                        }],
+                        "classification": "2"
+                    },
+                    {
+                        "label": "Brazil",
+                        "isIncluded": true,
+                        "times": [{
+                            "text": "",
+                            "starting_time": Date.parse('2020-01-20'),
+                            "ending_time": Date.parse('2020-02-17')
+                        }],
+                        "classification": "4"
+                    },
+                    {
+                        "label": "Canada",
+                        "isIncluded": true,
+                        "times": [{
+                            "text": "",
+                            "starting_time": Date.parse('2020-02-20'),
+                            "ending_time": Date.parse('2020-04-20')
+                        }],
+                        "classification": "3"
+                    }
+                ];
+
+                //gettimelinedata
+                // read csv file and convert to json format
+                var temptimelinedata = [];
+                $.ajax({
+                    type: 'GET',
+                    url: "./Data/timelinedata.csv",
+                    dataType: 'text',
+                    success: function (data) {
+                        var jsonData = $.csv.toObjects(data);
+                        console.log(jsonData);
+                        for (let i = 0; i < jsonData.length; i++){
+
+                            temptimelinedata.push({
+                                "label": jsonData[i].name,
+                                "isIncluded": true,
+                                "times": [{
+                                    "text": "",
+                                    "starting_time": Date.parse(jsonData[i].datefrom),
+                                    "ending_time": Date.parse(jsonData[i].dateto)
+                                }],
+                                "classification": jsonData[i].category
+                            })
+                        }
+
+                        drawTimeLineByData("appendBrushSVG", temptimelinedata, styleConfig);
+                    }, // end: Ajax success API call
+                    error: function (e) {
+                        alert('An error occurred while processing API calls');
+                        console.log("API call Failed: ", e);
+                    },
+
+                });
+
+
+                // console.log(temptimelinedata);
+                // console.log(timelinedata);
+
+
+
+
+                // //matrix chart starts
+                // var matrixdata = d3.json("./Data/testmatrix.json", function(error, values) {
+                //     playRects(appendIdStr, values, styleControler, cols + 1, rectPadding, mapcirclecolor);
+                // });
+
+
+
+            });
+        })
+    });
+
+    //Common function
+    function Unique(arr){
+        let temp = {}	//	用于name判断
+        let result = [] // 最后的新数组
+        arr.map((item, index) => {
+            if (!temp[item.properties.cluster_id]) {
+                result.push(item)
+                temp[item.properties.cluster_id] = true
+            }
+        })
+        return result;
+    }
+
+    function deWeightCluster(arr) {
+        for (var i = 0; i < arr.length - 1; i++) {
+            for (var j = i + 1; j < arr.length; j++) {
+                if (arr[i].clusterlgacode == arr[j].clusterlgacode) {
+                    arr.splice(j, 1);
+                    //因为数组长度减小1，所以直接 j++ 会漏掉一个元素，所以要 j--
+                    j--;
+                }
+            }
+        }
+        return arr;
+    }
+
+
+    //find differences between  two sets
+    function getDifferenceSet(arr1,arr2,typeName){
+        return Object.values(arr1.concat(arr2).reduce((acc,cur) => {
+            if (acc[cur[typeName]] && acc[cur[typeName]][typeName] === cur[typeName]) {
+                delete acc[cur[typeName]];
+            }else{
+                acc[cur[typeName]] = cur;
+            }
+            return acc ;
+        },{}));
+    }
+
+    //find differences between  two sets
+    function getDifferenceSetLGAcode(arr1, arr2) {
+        arr1 = arr1.map(JSON.stringify);
+        arr2 = arr2.map(JSON.stringify);
+        return arr1.concat(arr2).filter(function (v, i, arr) {
+            return arr.indexOf(v) === arr.lastIndexOf(v);
+        }).map(JSON.parse)
+    }
+
+
+</script>
+</body>

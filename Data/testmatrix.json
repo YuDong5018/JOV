@@ -1,0 +1,510 @@
+[
+  {
+    "Storageid": 1,
+    "Details": [ 
+      {
+
+        "Name": "a",
+        "LGAcode": "10000",
+        "caseslist": [
+          {
+            "Month": 1,
+            "Year": "2020",
+            "cases": 10
+          },
+          {
+            "Month": 2,
+            "Year": "2020",
+            "cases": 5
+          },
+          {
+            "Month": 3,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 4,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 5,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 6,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 7,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 8,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 9,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 10,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 11,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 12,
+            "Year": "2020",
+            "cases": 0
+          }
+        ],
+        "status": "unclustered",
+        "timespan": "2020-2021"
+
+      },{
+
+        "Name": "e",
+        "LGAcode": "10004",
+        "caseslist": [
+          {
+            "Month": 1,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 2,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 3,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 4,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 5,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 6,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 7,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 8,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 9,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 10,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 11,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 12,
+            "Year": "2020",
+            "cases": 0
+          }
+        ],
+        "status": "unclustered",
+        "timespan": "2020-2021"
+
+      },
+      {
+
+        "Name": "bcd",
+        "LGAcode": "10001-10002-10003",
+        "caseslist": [
+          {
+            "Month": 1,
+            "Year": "2020",
+            "cases": 20
+          },
+          {
+            "Month": 2,
+            "Year": "2020",
+            "cases": 5
+          },
+          {
+            "Month": 3,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 4,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 5,
+            "Year": "2020",
+            "cases": 10
+          },
+          {
+            "Month": 6,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 7,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 8,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 9,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 10,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 11,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 12,
+            "Year": "2020",
+            "cases": 0
+          }
+        ],
+        "status": "clustered",
+        "timespan": "2020-2021"
+
+      }
+    ]
+  },{
+    "Storageid": 2,
+    "Details": [
+      {
+
+        "Name": "a",
+        "LGAcode": "10001",
+        "caseslist": [
+          {
+            "Month": 1,
+            "Year": "2020",
+            "cases": 5
+          },
+          {
+            "Month": 2,
+            "Year": "2020",
+            "cases": 5
+          },
+          {
+            "Month": 3,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 4,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 5,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 6,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 7,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 8,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 9,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 10,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 11,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 12,
+            "Year": "2020",
+            "cases": 0
+          }
+        ],
+        "status": "unclustered",
+        "timespan": "2020-2021"
+
+      },{
+
+        "Name": "cd",
+        "LGAcode": "10002-10003",
+        "caseslist": [
+          {
+            "Month": 1,
+            "Year": "2020",
+            "cases": 10
+          },
+          {
+            "Month": 2,
+            "Year": "2020",
+            "cases": 15
+          },
+          {
+            "Month": 3,
+            "Year": "2020",
+            "cases": 13
+          },
+          {
+            "Month": 4,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 5,
+            "Year": "2020",
+            "cases": 10
+          },
+          {
+            "Month": 6,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 7,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 8,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 9,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 10,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 11,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 12,
+            "Year": "2020",
+            "cases": 2
+          }
+        ],
+        "status": "grouped",
+        "timespan": "2020-2021"
+
+      }
+    ]
+
+  },{
+    "Storageid": 3,
+    "Details": [
+      {
+
+        "Name": "d",
+        "LGAcode": "10003",
+        "caseslist": [
+          {
+            "Month": 1,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 2,
+            "Year": "2020",
+            "cases": 5
+          },
+          {
+            "Month": 3,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 4,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 5,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 6,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 7,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 8,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 9,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 10,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 11,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 12,
+            "Year": "2020",
+            "cases": 0
+          }
+        ],
+        "status": "unclustered",
+        "timespan": "2020-2021"
+
+      },{
+
+        "Name": "bcd",
+        "LGAcode": "10001-10002-10003",
+        "caseslist": [
+          {
+            "Month": 1,
+            "Year": "2020",
+            "cases": 10
+          },
+          {
+            "Month": 2,
+            "Year": "2020",
+            "cases": 5
+          },
+          {
+            "Month": 3,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 4,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 5,
+            "Year": "2020",
+            "cases": 10
+          },
+          {
+            "Month": 6,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 7,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 8,
+            "Year": "2020",
+            "cases": 3
+          },
+          {
+            "Month": 9,
+            "Year": "2020",
+            "cases": 2
+          },
+          {
+            "Month": 10,
+            "Year": "2020",
+            "cases": 1
+          },
+          {
+            "Month": 11,
+            "Year": "2020",
+            "cases": 0
+          },
+          {
+            "Month": 12,
+            "Year": "2020",
+            "cases": 0
+          }
+        ],
+        "status": "clustered",
+        "timespan": "2020-2021"
+
+      }
+    ]
+  }
+]
+
+
+
+
+
+
+

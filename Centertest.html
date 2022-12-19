@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8 />
+    <title>Show drawn polygon area</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js"></script>
+    <script src='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js'></script>
+    <link href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+<link href='https://api.mapbox.com/mapbox.js/plugins/leaflet-draw/v0.4.10/leaflet.draw.css' rel='stylesheet' />
+<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-draw/v0.4.10/leaflet.draw.js'></script>
+<script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.2/mapbox-gl-draw.js"></script>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.2/mapbox-gl-draw.css" type="text/css">
+<script src='./JS/leaflet-geodesy.js'></script>
+
+<div id='map'></div>
+
+<script>
+    L.mapbox.accessToken = 'pk.eyJ1IjoibWFnZTUwMTgiLCJhIjoiY2psd3cwemxuMTlyYzNwb2d4cXhyNGx0ZSJ9.VkkG4riV7oxGcAnStBiHJA';
+    var map = L.mapbox.map('map')
+        .setView([-33.30, 150.91], 8)
+        .addLayer(L.mapbox.styleLayer('mapbox://styles/mage5018/ckbumhoti0mes1iqmcl4m1qo7'));
+
+    var featureGroup = L.featureGroup().addTo(map);
+
+    var drawControl = new L.Control.Draw({
+        edit: {
+            featureGroup: featureGroup
+        },
+        draw: {
+            polygon: true,
+            polyline: false,
+            rectangle: false,
+            circle: false,
+            marker: false
+        }
+    }).addTo(map);
+
+
+
+
+    var coordinates = [
+        [
+            [-67.13734, 45.13745],
+            [-66.96466, 44.8097],
+            [-68.03252, 44.3252],
+            [-69.06, 43.98],
+            [-70.11617, 43.68405],
+            [-70.64573, 43.09008],
+            [-70.75102, 43.08003],
+            [-70.79761, 43.21973],
+            [-70.98176, 43.36789],
+            [-70.94416, 43.46633]
+        ],
+        [
+            [151.197371726959, -36.9185194088734],
+            [152.197371726959, -34.9185194088734],
+            [153.197371726959, -32.9185194088734],
+            [154.197371726959, -30.9185194088734],
+            [155.197371726959, -31.9185194088734],
+            [154.197371726959, -31.9185194088734]
+        ]
+    ];
+
+
+
+
+    var markers = [];
+    for (var i = 0; i < coordinates.length; i++){
+        markers.push(L.polygon(coordinates[i]).getBounds().getCenter());
+        console.log(markers);
+    }
+
+
+    for (var i = 0; i < markers.length; i++){
+        L.circle(markers[i]).addTo(map);
+        console.log(markers[i]);
+    }
+
+    map.on('draw:created', showPolygonArea);
+    map.on('draw:edited', showPolygonAreaEdited);
+    map.on('load', function () {
+// Add a new source from our GeoJSON data and
+// set the 'cluster' option to true. GL-JS will
+// add the point_count property to your source data.
+        map.addSource('earthquakes', {
+            type: 'geojson',
+// Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
+// from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
+            data: './Data/data_online.json',
+            // data: 'https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson',
+            cluster: false,
+            clusterMaxZoom: 14, // Max zoom to cluster points on
+            clusterRadius: 20 // Radius of each cluster when clustering points (defaults to 50)
+        });
+
+        map.addLayer({
+            id: 'clusters',
+            type: 'circle',
+            source: 'earthquakes',
+            filter: ['has', 'point_count'],
+            paint: {
+// Use step expressions (https://docs.mapbox.com/mapbox-gl-js/style-spec/#expressions-step)
+// with three steps to implement three types of circles:
+//   * Blue, 20px circles when point count is less than 100
+//   * Yellow, 30px circles when point count is between 100 and 750
+//   * Pink, 40px circles when point count is greater than or equal to 750
+                'circle-color': [
+                    'step',
+                    ['get', 'point_count'],
+                    '#51bbd6',
+                    1,
+                    '#f1f075',
+                    5,
+                    '#f28cb1'
+                ],
+                'circle-radius': [
+                    'step',
+                    ['get', 'point_count'],
+                    20,
+                    100,
+                    30,
+                    750,
+                    40
+                ]
+            }
+        });
+
+        map.addLayer({
+            id: 'cluster-count',
+            type: 'symbol',
+            source: 'earthquakes',
+            filter: ['has', 'point_count'],
+            layout: {
+                'text-field': '{point_count_abbreviated}',
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 12
+            }
+        });
+
+        map.addLayer({
+            id: 'unclustered-point',
+            type: 'circle',
+            source: 'earthquakes',
+            filter: ['!', ['has', 'point_count']],
+            paint: {
+                'circle-color': '#11b4da',
+                'circle-radius': 4,
+                'circle-stroke-width': 1,
+                'circle-stroke-color': '#fff'
+            }
+        });
+
+// inspect a cluster on click
+        map.on('click', 'clusters', function (e) {
+            var features = map.queryRenderedFeatures(e.point, {
+                layers: ['clusters']
+            });
+            //console.log(features);
+            var clusterId = features[0].properties.cluster_id;
+            map.getSource('earthquakes').getClusterExpansionZoom(
+                clusterId,
+                function (err, zoom) {
+                    if (err) return;
+
+                    map.easeTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
+                }
+            );
+        });
+
+// When a click event occurs on a feature in
+// the unclustered-point layer, open a popup at
+// the location of the feature, with
+// description HTML from its properties.
+        map.on('click', 'unclustered-point', function (e) {
+            var coordinates = e.features[0].geometry.coordinates.slice();
+            var mag = e.features[0].properties.mag;
+            var tsunami;
+
+            if (e.features[0].properties.tsunami === 1) {
+                tsunami = 'yes';
+            } else {
+                tsunami = 'no';
+            }
+
+// Ensure that if the map is zoomed out such that
+// multiple copies of the feature are visible, the
+// popup appears over the copy being pointed to.
+            while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+            }
+
+            new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(
+                    'magnitude: ' + mag + '<br>Was there a tsunami?: ' + tsunami
+                )
+                .addTo(map);
+        });
+
+        map.on('mouseenter', 'clusters', function () {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', 'clusters', function () {
+            map.getCanvas().style.cursor = '';
+        });
+    });
+
+    function showPolygonAreaEdited(e) {
+        e.layers.eachLayer(function(layer) {
+            showPolygonArea({ layer: layer });
+        });
+    }
+    function showPolygonArea(e) {
+        featureGroup.clearLayers();
+        featureGroup.addLayer(e.layer);
+
+        // Here 'e.layer' holds the L.Polygon instance:
+        //new L.Marker(featureGroup.getBounds().getCenter()).addTo(map);
+
+
+        //
+        //var polygon = new L.Polygon(coordinates).addTo(map);
+
+        var marker = new L.Marker(featureGroup.getBounds().getCenter()).addTo(map);
+        console.log(marker);
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <title>MapboxGL & D3.js</title>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.52.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+
+        html, body, #wrapper {
+            width: 100%;
+            height: 100%;
+            padding: 0px;
+            margin: 0px;
+        }
+        #map {
+            position:relative;
+            width: 100%;
+            height: 100%;
+            margin: auto auto;
+        }
+        svg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+<div id="wrapper">
+    <div id="map"></div>
+</div>
+
+<script src='./JS/d3.v5.min.js'></script>
+<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.52.0/mapbox-gl.js'></script>
+<script src='./JS/d3.v3.min.js'></script>
+<script src="https://d3js.org/topojson.v1.min.js"></script>
+<script src="./JS/supercluster.js"></script>
+<script>
+    d3v5.json("./Data/11nsw-lga-boundaries.geojson").then(mapDraw);
+
+    // set projection
+    var projection = d3.geo.mercator();
+
+    function mapDraw(geojson){
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoibWFnZTUwMTgiLCJhIjoiY2psd3cwemxuMTlyYzNwb2d4cXhyNGx0ZSJ9.VkkG4riV7oxGcAnStBiHJA'
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mage5018/ckbumhoti0mes1iqmcl4m1qo7',
+            zoom: 5,
+            center: [150.91, -33.30],
+            pitchWithRotate: false,
+            dragRotate: false,
+            //maxBounds: nswBounds,
+            attributionControl: false
+        });
+
+        map.addControl(new mapboxgl.NavigationControl());
+
+        function project(data) {
+            return map.project(new mapboxgl.LngLat(data[1], data[0]));
+        }
+
+        var container = map.getCanvasContainer()
+        const bb = container.getBoundingClientRect();
+        var svg = d3v5.select(container)
+            .append("svg")
+            .style("position", "absolute")
+            .style("top", 0)
+            .style("left", 0)
+            .attr("width", bb.width)
+            .attr("height", bb.height)
+            // .style("pointer-events", "none"); // the svg shouldn't capture mouse events, so we can have pan and zoom from mapbox
+        var g = svg.append("g");
+        // // set projection parameters
+        // projection
+        //     .scale(4)
+        //     .center([150.91, -33.30])
+
+
+        function projectPoint(lon, lat) {
+            var point = map.project(new mapboxgl.LngLat(lon, lat));
+            this.stream.point(point.x, point.y);
+        }
+        var transform = d3v5.geoTransform({point: projectPoint});
+        var path = d3v5.geoPath().projection(transform);
+
+        var featureElement = g.selectAll("path")
+            .data(geojson.features)
+            .enter()
+            .append("path")
+            .attr("stroke", "#636363")
+            .attr("fill", "#e5f5e0")
+            .attr("fill-opacity", 0.4)
+            .attr('id', function(d, i) {
+                //console.log(d);
+                return "polygon-" + d.properties.lg_ply_pid;
+            })
+            .on("mousemove",function(d){
+                // console.log(d.data);
+                // var mouseVal = d3.mouse(this);
+                // var tempscore;
+                d3.select(this).style("fill", "#f11000")})
+            .on("mouseout",function(d) {
+                d3.select(this).style("fill", "#e5f5e0")});
+
+        // console.log(geojson.features);
+        // console.log(projection(geojson.features[1].properties.geo_point_2d));
+        // console.log(geojson.features[1].properties.geo_point_2d)
+
+        var dots = svg
+            .selectAll("circle")
+            .data(geojson.features)
+            .enter()
+            .append("circle")
+            .attr('id', function(d, i) {
+                console.log(d);
+                return 'circle-' + d.index
+            })
+            .attr("r", 5)
+            .style("opacity", 1)
+            .attr("stroke", "#636363")
+            .attr("fill", "#ffffff")
+            .attr("fill-opacity", 0.4)
+            .on("click", function (d){
+                console.log(project(d.properties.geo_point_2d).x);
+            })
+
+        function update() {
+            featureElement.attr("d", path);
+            dots
+                .attr("cx", function(data) {
+                    //console.log(data.properties.geo_point_2d);
+                    return project(data.properties.geo_point_2d).x;
+                })
+                .attr("cy", function(data) {
+                    return project(data.properties.geo_point_2d).y;
+                });
+            //dots.attr("d", path);
+        }
+
+        // map.on("viewreset", update);
+        // map.on("move", update);
+        //map.on("moveend", update);
+        //
+        map.on("viewreset", update)
+        map.on("movestart", function(){
+            svg.classed("hidden", true);
+        });
+        map.on("rotate", function(){
+            svg.classed("hidden", true);
+        });
+        map.on("moveend", function(){
+            update()
+            svg.classed("hidden", false);
+        })
+
+        update();
+
+
+
+    }
+
+
+</script>
+</body>

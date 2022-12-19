@@ -1,0 +1,526 @@
+[
+    {
+        "lganame": "No usual address",
+        "lgacode": 19499
+    },
+    {
+        "lganame": "Albury",
+        "lgacode": 10050
+    },
+    {
+        "lganame": "Greater Hume Shire",
+        "lgacode": 13340
+    },
+    {
+        "lganame": "Armidale Regional",
+        "lgacode": 10180
+    },
+    {
+        "lganame": "Inner West",
+        "lgacode": 14170
+    },
+    {
+        "lganame": "Cabonne",
+        "lgacode": 11400
+    },
+    {
+        "lganame": "Parramatta",
+        "lgacode": 16260
+    },
+    {
+        "lganame": "Cumberland",
+        "lgacode": 12380
+    },
+    {
+        "lganame": "Ballina",
+        "lgacode": 10250
+    },
+    {
+        "lganame": "Balranald",
+        "lgacode": 10300
+    },
+    {
+        "lganame": "Hornsby",
+        "lgacode": 14000
+    },
+    {
+        "lganame": "Canterbury-Bankstown",
+        "lgacode": 11570
+    },
+    {
+        "lganame": "Port Macquarie-Hastings",
+        "lgacode": 16380
+    },
+    {
+        "lganame": "Bathurst Regional",
+        "lgacode": 10470
+    },
+    {
+        "lganame": "The Hills Shire",
+        "lgacode": 17420
+    },
+    {
+        "lganame": "Bega Valley",
+        "lgacode": 10550
+    },
+    {
+        "lganame": "Bellingen",
+        "lgacode": 10600
+    },
+    {
+        "lganame": "Nambucca Valley",
+        "lgacode": 15700
+    },
+    {
+        "lganame": "Berrigan",
+        "lgacode": 10650
+    },
+    {
+        "lganame": "Blacktown",
+        "lgacode": 10750
+    },
+    {
+        "lganame": "Wollongong",
+        "lgacode": 18450
+    },
+    {
+        "lganame": "Bland",
+        "lgacode": 10800
+    },
+    {
+        "lganame": "Blayney",
+        "lgacode": 10850
+    },
+    {
+        "lganame": "Blue Mountains",
+        "lgacode": 10900
+    },
+    {
+        "lganame": "Bogan",
+        "lgacode": 10950
+    },
+    {
+        "lganame": "Snowy Monaro Regional",
+        "lgacode": 17040
+    },
+    {
+        "lganame": "Hilltops",
+        "lgacode": 13910
+    },
+    {
+        "lganame": "Bayside",
+        "lgacode": 10500
+    },
+    {
+        "lganame": "Bourke",
+        "lgacode": 11150
+    },
+    {
+        "lganame": "Brewarrina",
+        "lgacode": 11200
+    },
+    {
+        "lganame": "Broken Hill",
+        "lgacode": 11250
+    },
+    {
+        "lganame": "Burwood",
+        "lgacode": 11300
+    },
+    {
+        "lganame": "Byron",
+        "lgacode": 11350
+    },
+    {
+        "lganame": "Camden",
+        "lgacode": 11450
+    },
+    {
+        "lganame": "Campbelltown",
+        "lgacode": 11500
+    },
+    {
+        "lganame": "Canada Bay",
+        "lgacode": 11520
+    },
+    {
+        "lganame": "Georges River",
+        "lgacode": 12930
+    },
+    {
+        "lganame": "Carrathool",
+        "lgacode": 11600
+    },
+    {
+        "lganame": "Richmond Valley",
+        "lgacode": 16610
+    },
+    {
+        "lganame": "Central Darling",
+        "lgacode": 11700
+    },
+    {
+        "lganame": "Cessnock",
+        "lgacode": 11720
+    },
+    {
+        "lganame": "Clarence Valley",
+        "lgacode": 11730
+    },
+    {
+        "lganame": "Cobar",
+        "lgacode": 11750
+    },
+    {
+        "lganame": "Coffs Harbour",
+        "lgacode": 11800
+    },
+    {
+        "lganame": "Edward River",
+        "lgacode": 12730
+    },
+    {
+        "lganame": "Coolamon",
+        "lgacode": 12000
+    },
+    {
+        "lganame": "Queanbeyan-Palerang Regional",
+        "lgacode": 16490
+    },
+    {
+        "lganame": "Coonamble",
+        "lgacode": 12150
+    },
+    {
+        "lganame": "Cootamundra-Gundagai Regional",
+        "lgacode": 12160
+    },
+    {
+        "lganame": "Federation",
+        "lgacode": 12870
+    },
+    {
+        "lganame": "Cowra",
+        "lgacode": 12350
+    },
+    {
+        "lganame": "Dubbo Regional",
+        "lgacode": 12390
+    },
+    {
+        "lganame": "Dungog",
+        "lgacode": 12700
+    },
+    {
+        "lganame": "Eurobodalla",
+        "lgacode": 12750
+    },
+    {
+        "lganame": "Fairfield",
+        "lgacode": 12850
+    },
+    {
+        "lganame": "Forbes",
+        "lgacode": 12900
+    },
+    {
+        "lganame": "Gilgandra",
+        "lgacode": 12950
+    },
+    {
+        "lganame": "Glen Innes Severn",
+        "lgacode": 13010
+    },
+    {
+        "lganame": "Mid-Coast",
+        "lgacode": 15240
+    },
+    {
+        "lganame": "Central Coast",
+        "lgacode": 11650
+    },
+    {
+        "lganame": "Goulburn Mulwaree",
+        "lgacode": 13310
+    },
+    {
+        "lganame": "Upper Lachlan Shire",
+        "lgacode": 17640
+    },
+    {
+        "lganame": "Griffith",
+        "lgacode": 13450
+    },
+    {
+        "lganame": "Gunnedah",
+        "lgacode": 13550
+    },
+    {
+        "lganame": "Inverell",
+        "lgacode": 14220
+    },
+    {
+        "lganame": "Gwydir",
+        "lgacode": 13660
+    },
+    {
+        "lganame": "Tamworth Regional",
+        "lgacode": 17310
+    },
+    {
+        "lganame": "Hawkesbury",
+        "lgacode": 13800
+    },
+    {
+        "lganame": "Hay",
+        "lgacode": 13850
+    },
+    {
+        "lganame": "Hunters Hill",
+        "lgacode": 14100
+    },
+    {
+        "lganame": "Murrumbidgee",
+        "lgacode": 15560
+    },
+    {
+        "lganame": "Junee",
+        "lgacode": 14300
+    },
+    {
+        "lganame": "Kempsey",
+        "lgacode": 14350
+    },
+    {
+        "lganame": "Kiama",
+        "lgacode": 14400
+    },
+    {
+        "lganame": "Ku-ring-gai",
+        "lgacode": 14500
+    },
+    {
+        "lganame": "Kyogle",
+        "lgacode": 14550
+    },
+    {
+        "lganame": "Lachlan",
+        "lgacode": 14600
+    },
+    {
+        "lganame": "Lake Macquarie",
+        "lgacode": 14650
+    },
+    {
+        "lganame": "Lane Cove",
+        "lgacode": 14700
+    },
+    {
+        "lganame": "Leeton",
+        "lgacode": 14750
+    },
+    {
+        "lganame": "Lismore",
+        "lgacode": 14850
+    },
+    {
+        "lganame": "Lithgow",
+        "lgacode": 14870
+    },
+    {
+        "lganame": "Mid-Western Regional",
+        "lgacode": 15270
+    },
+    {
+        "lganame": "Liverpool",
+        "lgacode": 14900
+    },
+    {
+        "lganame": "Liverpool Plains",
+        "lgacode": 14920
+    },
+    {
+        "lganame": "Lockhart",
+        "lgacode": 14950
+    },
+    {
+        "lganame": "Maitland",
+        "lgacode": 15050
+    },
+    {
+        "lganame": "Northern Beaches",
+        "lgacode": 15990
+    },
+    {
+        "lganame": "Moree Plains",
+        "lgacode": 15300
+    },
+    {
+        "lganame": "Mosman",
+        "lgacode": 15350
+    },
+    {
+        "lganame": "North Sydney",
+        "lgacode": 15950
+    },
+    {
+        "lganame": "Murray River",
+        "lgacode": 15520
+    },
+    {
+        "lganame": "Muswellbrook",
+        "lgacode": 15650
+    },
+    {
+        "lganame": "Narrabri",
+        "lgacode": 15750
+    },
+    {
+        "lganame": "Narrandera",
+        "lgacode": 15800
+    },
+    {
+        "lganame": "Narromine",
+        "lgacode": 15850
+    },
+    {
+        "lganame": "Newcastle",
+        "lgacode": 15900
+    },
+    {
+        "lganame": "Oberon",
+        "lgacode": 16100
+    },
+    {
+        "lganame": "Orange",
+        "lgacode": 16150
+    },
+    {
+        "lganame": "Parkes",
+        "lgacode": 16200
+    },
+    {
+        "lganame": "Penrith",
+        "lgacode": 16350
+    },
+    {
+        "lganame": "Port Stephens",
+        "lgacode": 16400
+    },
+    {
+        "lganame": "Randwick",
+        "lgacode": 16550
+    },
+    {
+        "lganame": "Ryde",
+        "lgacode": 16700
+    },
+    {
+        "lganame": "Shellharbour",
+        "lgacode": 16900
+    },
+    {
+        "lganame": "Shoalhaven",
+        "lgacode": 16950
+    },
+    {
+        "lganame": "Singleton",
+        "lgacode": 17000
+    },
+    {
+        "lganame": "Strathfield",
+        "lgacode": 17100
+    },
+    {
+        "lganame": "Sutherland Shire",
+        "lgacode": 17150
+    },
+    {
+        "lganame": "Sydney",
+        "lgacode": 17200
+    },
+    {
+        "lganame": "Temora",
+        "lgacode": 17350
+    },
+    {
+        "lganame": "Tenterfield",
+        "lgacode": 17400
+    },
+    {
+        "lganame": "Snowy Valleys",
+        "lgacode": 17080
+    },
+    {
+        "lganame": "Tweed",
+        "lgacode": 17550
+    },
+    {
+        "lganame": "Upper Hunter Shire",
+        "lgacode": 17620
+    },
+    {
+        "lganame": "Uralla",
+        "lgacode": 17650
+    },
+    {
+        "lganame": "Wagga Wagga",
+        "lgacode": 17750
+    },
+    {
+        "lganame": "Walcha",
+        "lgacode": 17850
+    },
+    {
+        "lganame": "Walgett",
+        "lgacode": 17900
+    },
+    {
+        "lganame": "Warren",
+        "lgacode": 17950
+    },
+    {
+        "lganame": "Warrumbungle Shire",
+        "lgacode": 18020
+    },
+    {
+        "lganame": "Waverley",
+        "lgacode": 18050
+    },
+    {
+        "lganame": "Weddin",
+        "lgacode": 18100
+    },
+    {
+        "lganame": "Wentworth",
+        "lgacode": 18200
+    },
+    {
+        "lganame": "Willoughby",
+        "lgacode": 18250
+    },
+    {
+        "lganame": "Wingecarribee",
+        "lgacode": 18350
+    },
+    {
+        "lganame": "Wollondilly",
+        "lgacode": 18400
+    },
+    {
+        "lganame": "Woollahra",
+        "lgacode": 18500
+    },
+    {
+        "lganame": "Yass Valley",
+        "lgacode": 18710
+    },
+    {
+        "lganame": "Unincorporated NSW",
+        "lgacode": 19399
+    },
+    {
+        "lganame": "Migratory - Offshore - Shipping",
+        "lgacode": 19799
+    }
+]

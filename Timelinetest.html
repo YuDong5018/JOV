@@ -1,0 +1,346 @@
+<html>
+<head>
+  <title>bar chart with D3.js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style id="compiled-css" type="text/css">
+    body {
+      background: #eeeeee;
+    }
+    #holder {
+      overflow: hidden;
+    }
+    /*
+    .chart {
+       shape-rendering: crispEdges;
+    }
+    */
+    .timelinechart {
+      /*width:100%;
+       border: 1px solid red;*/
+    }
+    .timelinechart svg {
+      width: 100%;
+      /*border: 1px solid green;*/
+    }
+    .timelinechartg {}
+    .mini text {}
+    .main text {}
+    .axis {}
+    .miniItem {
+      fill: #0072ce;
+      stroke-width: 6;
+    }
+    .miniItem.future {
+      fill: #448875;
+    }
+    text.future {
+      fill: #f7b363;
+    }
+    .brush .extent {
+      stroke: #b6b8b9;
+      fill: #57585b;
+      fill-opacity: .365;
+      stroke-width: .2;
+    }
+    .laneImg {
+      border-radius: 25px;
+    }
+    .currentLine {
+      stroke-width: 2;
+    }
+    .axis text {
+      font-size: 12px;
+    }
+    .base.axis text {
+      font-size: 10px;
+    }
+    .laneText {
+      font-size: 12px;
+    }
+    div.tooltip {
+      position: absolute;
+      text-align: left;
+      width: 120px;
+      height: 28px;
+      padding: 2px;
+      font: 12px sans-serif;
+      background: #ffffff;
+      border: 0px;
+      pointer-events: none;
+    }
+    .noselect {
+      -webkit-touch-callout: none;
+      /* iOS Safari */
+      -webkit-user-select: none;
+      /* Safari */
+      -khtml-user-select: none;
+      /* Konqueror HTML */
+      -moz-user-select: none;
+      /* Old versions of Firefox */
+      -ms-user-select: none;
+      /* Internet Explorer/Edge */
+      user-select: none;
+      /* Non-prefixed version, currently
+                                      supported by Chrome, Opera and Firefox */
+    }
+    .selection{
+      fill: #ffffff;
+      stroke: #0072ce;
+      stroke-width: 1.5px;
+      fill-opacity: 0.5;
+    }
+    .currentLine{
+      stroke: darkgrey;
+    }
+
+  </style>
+</head>
+<body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+  <title>Gantt chart with D3.js</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script type='text/javascript' src="https://d3js.org/d3.v4.min.js"></script>
+</head>
+<body>
+<div class="timelinechart" data-role="timelinechart" data-width=1000 data-height=200 data-config='{"gutter": 0.1}' data-data="">
+</div>
+</body>
+</html>
+<script type='text/javascript'>
+  $(document).ready(function() {
+    var $this = $('.timelinechart');
+    var w = $this.data("width");
+    var h = $this.data("height");
+    var config = $this.data("config");
+    var {gutter} = config;
+    var now = Date.now();
+    var data = [
+      {
+        "label": "Argentina",
+        "isIncluded": true,
+        "times": [
+          {"text": "", "starting_time": Date.parse('2020-01-14T15:20:00Z'), "ending_time": Date.parse('2020-05-30T03:59:00Z')}
+        ],
+        "classification": "1"
+      },
+      {
+        "label": "Bolivia",
+        "isIncluded": true,
+        "times": [
+          {"text": "", "starting_time":Date.parse('2020-01-17T03:24:00'), "ending_time": Date.parse('2020-06-28T03:24:00')}
+        ],
+        "classification": "2"
+      },
+      {
+        "label": "Brazil",
+        "isIncluded": true,
+        "times": [
+          {"text": "", "starting_time": Date.parse('2020-01-20T03:24:00'), "ending_time": Date.parse('2020-02-17T03:24:00')}
+        ],
+        "classification": "4"
+      },
+      {
+        "label": "Canada",
+        "isIncluded": true,
+        "times": [
+          {"text": "", "starting_time": Date.parse('2020-02-20T03:24:00'), "ending_time": Date.parse('2020-04-20T03:24:00')}
+        ],
+        "classification": "3"
+      }
+    ];
+    var lanes = [];
+    var times = [];
+    $.each(data, function(index, value) {
+      lanes.push(value.label);
+      $.each(value.times, function(i, v) {
+        v["lane"] = index;
+      });
+      times.push(value.times);
+    });
+    var laneLength = lanes.length;
+    var items = [].concat.apply([], times);
+    $.each(items, function(i, v) {
+      v["id"] = i;
+    });
+    var timeBegin = d3.min(items, function(d) { return d["starting_time"]; });
+    var timeEnd = d3.max(items, function(d) { return d["ending_time"]; });
+    var m = [25, 150, 15, 105], //top right bottom left
+            w = w - m[1] - m[3],
+            h = h - m[0] - m[2],
+            miniHeight = 50,//laneLength * 12 + 50,
+            mainHeight = h - miniHeight - 50;
+    //scales
+    var x =  d3.scaleTime()
+            .range([0, w])
+            .domain([timeBegin, timeEnd]);
+    var xTop =  d3.scaleTime()
+            .range([0, w])
+            .domain([timeBegin, timeEnd]);
+    var x1 = d3.scaleLinear()
+            .range([0, w]);
+    var y1 = d3.scaleLinear()
+            .range([0, mainHeight])
+            .domain([0, laneLength]);
+    var y2 = d3.scaleLinear()
+            .range([0, miniHeight])
+            .domain([0, laneLength]);
+    var xAxis = d3.axisBottom(x)
+            .ticks(d3.timeMonth)
+            .tickFormat(d=>d3.timeFormat("%Y-%m")(d));
+    var xAxisTop = d3.axisBottom(xTop)
+            .ticks(d3.timeMonth)
+            .tickFormat(d=>d3.timeFormat("%Y-%m-%d")(d));
+    var scaleFactor = (1/(timeEnd - timeBegin)) * (w);
+    var chartWidth = w + m[1] + m[3];
+    var chartHeight = h + m[0] + m[2];
+    var chart = d3.select($this[0])
+            .append("svg")
+            .attr("width", chartWidth)
+            .attr("height", chartHeight)
+            .attr("viewBox", "0 0 "+chartWidth+" "+chartHeight)
+            .attr("preserveAspectRatio", "xMidYMid meet")
+            .append("g")
+            .attr("class", "timelinechartg");
+    chart.append("defs").append("clipPath")
+            .attr("id", "clip")
+            .append("rect")
+            .attr("width", w)
+            .attr("height", mainHeight);
+    var main = chart.append("g")
+            .attr("transform", "translate(" + m[3] + "," + m[0] + ")")
+            .attr("width", w)
+            .attr("height", mainHeight)
+            .attr("class", "main");
+    var mini = chart.append("g")
+            .attr("transform", "translate(" + m[3] + "," + (mainHeight + m[0]) + ")")
+            .attr("width", w)
+            .attr("height", miniHeight)
+            .attr("class", "mini");
+    var gX = chart.append("g")
+            .attr("class", "base axis")
+            .attr("transform", "translate(" + m[3] + "," + (mainHeight + miniHeight) + ")")
+            .call(xAxis);
+    gX.selectAll('.tick text');
+    var div = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+    var gXTop = chart.append("g")
+            .attr("class", "axis")
+            .attr("transform", "translate(" + m[3] + "," + 0 + ")")
+            .attr("font-size", 20)
+            .call(xAxisTop);
+    var defs = main.append('svg:defs');
+    //main lanes and texts
+    main.append("g")
+            .attr("class", "core-chart")
+            .selectAll(".laneLines")
+            .data(items)
+            .enter().append("line")
+            .attr("x1", 0)
+            .attr("y1", function(d) {return y1(d.lane);})
+            .attr("x2", w)
+            .attr("y2", function(d) {return y1(d.lane);})
+            .attr("stroke", "lightgray")
+    main.append("g")
+            .attr("class", "core-labels")
+            .selectAll(".laneText")
+            .data(lanes)
+            .enter().append("text")
+            .text(function(d) {return d;})
+            .attr("x", (-m[1] + 10))
+            .attr("y", function(d, i) {
+              return y1(i + .5);
+            })
+            .attr("dy", ".5ex")
+            .attr("text-anchor", "start")
+            .attr("class", "laneText");
+    var itemRects = main.append("g")
+            .attr("clip-path", "url(#clip)");
+    var currentLine = main.append('line')
+            .attr('class', "currentLine")
+            .attr("clip-path", "url(#clip)");
+    var brush = d3.brushX()
+            .extent([[0, 0], [w, miniHeight]])
+            .on("brush", brushed);
+    var gBrush = mini.append("g")
+            .attr("class", "x brush")
+            .call(brush)
+            //.selectAll("rect")
+            //.attr("y", 1)
+            //.attr("height", miniHeight - 1)
+            .call(brush.move, x1.range());
+    function toDays(d) {
+      d = d || 0;
+      return d / 24 / 60 / 60 / 1000;
+    }
+    function toUTC(d) {
+      if(!d || !d.getFullYear)return 0;
+      return Date.UTC(d.getFullYear(),
+              d.getMonth(),d.getDate());
+    }
+    function daysBetween(d1,d2){
+      return toDays(toUTC(d2)-toUTC(d1));
+    }
+    function drawBrush(minExtent, maxExtent) {
+      var visItems = items.filter(function(d) {return d.starting_time <  maxExtent && d.ending_time > minExtent;});
+      var toolTipDateFormat = d3.timeFormat("%Y-%m");
+      var days = daysBetween(minExtent,maxExtent);
+      var tFormat = "%Y-%m";
+      var tTick = 'timeMonth';
+      if(days < 40){
+        tFormat = "%Y-%m-%d";
+        tTick = 'timeWeek';
+      }
+      var xAxisTop2 = d3.axisBottom(xTop)
+              .ticks(d3[tTick])
+              .tickFormat(d=>d3.timeFormat(tFormat)(d));
+      x1.domain([minExtent, maxExtent]);
+      xTop.domain([minExtent, maxExtent]);
+      gXTop.call(xAxisTop2);
+      gXTop.selectAll('.tick text');
+      currentLine.attr("x1", x1(now)).attr("x2", x1(now)).attr("y1", 0).attr("y2", mainHeight);
+      //update main item rects
+      var rects = itemRects.selectAll("rect")
+              .data(visItems, function(d) { return d.id; })
+              .attr("x", function(d) {return x1(d.starting_time);})
+              .attr("width", function(d) {return x1(d.ending_time) - x1(d.starting_time);});
+      rects.enter().append("rect")
+              .attr("class", function(d) {return "miniItem "+d.state;})
+              .attr("x", function(d) {return x1(d.starting_time);})
+              .attr("y", function(d) {return y1(d.lane+gutter);})
+              .attr("width", function(d) {return x1(d.ending_time) - x1(d.starting_time);})
+              .attr("height", function(d) {return y1(1-2*gutter);})
+              .on("mouseover", function(d) {
+                div.transition()
+                        .duration(200)
+                        .style("opacity", .9);
+                div.html("Start Time " + toolTipDateFormat(d.starting_time) + "<br>" + "End Time " + toolTipDateFormat(d.ending_time))
+                        .style("left", (d3.event.pageX) + "px")
+                        .style("top", (d3.event.pageY - 28) + "px");
+              })
+              .on("mouseout", function(d) {
+                div.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+              });
+      rects.exit().remove();
+    }
+    function brushed() {
+      var selection = d3.event.selection;
+      var timeSelection = selection.map(x.invert, x);
+      var minExtent = timeSelection[0];
+      var maxExtent = timeSelection[1];
+      drawBrush(minExtent, maxExtent);
+    }
+    //drawBrush(timeBegin, timeEnd);
+    //console.log("mapppp", [0, 1].map(x1))
+    //gBrush.call(brush.move, [0, 1].map(x1))
+//gBrush.call(brush.move, [0.3, 0.5].map(x1));
+  });
+</script>
+</body>
+</html>

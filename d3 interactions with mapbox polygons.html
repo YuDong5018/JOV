@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+  <title>MapboxGL & D3.js</title>
+
+  <style>
+
+    html, body, #wrapper {
+      width: 100%;
+      height: 100%;
+      padding: 0px;
+      margin: 0px;
+    }
+
+    .node {
+      cursor: pointer;
+    }
+
+    #map {
+      position:relative;
+      width: 100%;
+      height: 100%;
+      margin: auto auto;
+    }
+    svg {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    .hidden {
+      display: none;
+    }
+
+    .brush .extent {
+      stroke: #000;
+      stroke-width: 1.5px;
+      fill: #000;
+      fill-opacity: 0.3;
+    }
+
+    .voronoi {
+      fill: steelblue;
+      fill-opacity: 0.4;
+      stroke: steelblue;
+      stroke-opacity: 0.5;
+    }
+
+    .voronoi.selected {
+      fill: red;
+      fill-opacity: 0.4;
+      stroke: darkred;
+      stroke-opacity: 0.5;
+    }
+
+    .dots.selected {
+      fill: red;
+      stroke: darkred;
+      stroke-width: 1;
+    }
+    #features {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 30%;
+      overflow: auto;
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .divlegend{
+      position: absolute;
+      text-align: left;
+      width: 185px;
+      font-size: 14px;
+      background: #444444;
+      padding: 4px;
+      /*padding: 2vw;*/
+      /*font: 1vw sans-serif;*/
+      border: 0px;
+      border-radius: 5px;
+      color:white;
+      /*字体颜色*/
+      box-shadow: -3px 3px 15px #888888;
+      opacity:0.8;
+      display: none;
+    }
+
+  </style>
+</head>
+
+<body>
+<div id="wrapper">
+  <!--    <button onclick="myFunction()">Click me</button>-->
+  <div id="map"></div>
+  <pre id="features"></pre>
+</div>
+
+<script src='./JS/d3.v5.min.js'></script>
+<!--<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.52.0/mapbox-gl.js'></script>-->
+<script src='./JS/d3.v3.min.js'></script>
+<!--<script src="https://d3js.org/topojson.v1.min.js"></script>-->
+<script src="./JS/supercluster.js"></script>
+<script src="./JS/polybrush.js"></script>
+<script src="./JS/mapbox-gl-draw.js"></script>
+<link rel="stylesheet" href="./CSS/mapbox-gl-draw.css" type="text/css">
+<script src="./JS/turf.min.js"></script>
+<script src="./JS/jquery.min.js"></script>
+<script src="./JS//jquery-ui.min.js"></script>
+<link href="./CSS/mapbox-gl.css" rel="stylesheet">
+<script src="./JS/mapbox-gl.js"></script>
+<script src='./JS/mapbox.js'></script>
+<link href='./CSS/mapbox.css' rel='stylesheet' />
+
+<script>
+
+  //COLOR PANEL
+  var ColorGrey = ['#C0C0C0'];
+  var Flowercolorpannel = ['#d53e4f','#1f78b4','#b2df8a','#33a02c','#fb9a99','#a6cee3','#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99'];
+
+
+  var LGAcenter = {
+    type: 'FeatureCollection',
+    features: []
+  };
+  var LGAcenterforD3 = {
+    type: 'FeatureCollection',
+    features: []
+  };
+  var LGAcenterofMonth= {
+    type: 'FeatureCollection',
+    features: []
+  };
+
+  //var tempclustersinfo = [];
+  // var wasLoaded = false;
+  var mapboxDynamicCluster = [];
+
+  var loadflag = 0;
+
+  // $.getJSON('./Data/11nsw-lga-boundaries.geojson',function(geojson) {
+  $.getJSON('./Data/nsw_lga_polygon_V5.geojson',function(geojson) {
+    var svg;
+    var brush;
+
+    var clusterarr = [];
+    var clusterstring = "";
+    var centrepoint = [];
+
+    $.getJSON('./Data/Month_Result_V2.json',function(monthjson) {
+      var storearr = [];
+
+      for (var a = 0; a < geojson.features.length; a++) {
+        var temparr = [];
+        for (var b = 0; b < monthjson.RECORDS.length; b ++)
+        {
+
+          if (geojson.features[a].properties.lgacode == monthjson.RECORDS[b].lgacode)
+          {
+            var tempsplitdate = monthjson.RECORDS[b].Date.split("/");
+            // if (monthjson.RECORDS[b].cases != 0)
+            // {
+            //     console.log(monthjson.RECORDS[b].Date + ", " + monthjson.RECORDS[b].lgacode + " has " + monthjson.RECORDS[b].cases);
+            // }
+            if (tempsplitdate[1] === '2020'){
+              temparr.push({
+                "Month": Number(tempsplitdate[0]),
+                "Year": tempsplitdate[1],
+                "lgacode": monthjson.RECORDS[b].lgacode,
+                "nsw_lga_3": monthjson.RECORDS[b].nsw_lga_3,
+                "cases": monthjson.RECORDS[b].cases,
+                "start": 360 / monthjson.RECORDS[b].maxnumber * (Number(tempsplitdate[0]) - 1),
+                "end": 360 / monthjson.RECORDS[b].maxnumber * Number(tempsplitdate[0])
+              });
+            }
+
+          }
+
+        }
+
+        LGAcenterofMonth.features.push({
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": geojson.features[a].geometry.coordinates
+          },
+
+          "properties": {
+            "geo_point_2d": [geojson.features[a].properties.geo_point_2d[0], geojson.features[a].properties.geo_point_2d[1]],
+            "name": geojson.features[a].properties.nsw_lga_3,
+            //"mag": Math.ceil(Math.random()*10),
+            "lgacode": geojson.features[a].properties.lgacode,
+            "caseslist": temparr
+          }
+        });
+
+        LGAcenter.features.push({
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [geojson.features[a].properties.geo_point_2d[1], geojson.features[a].properties.geo_point_2d[0]]
+            //swap latlng orders
+          },
+          "properties": {
+            "name": geojson.features[a].properties.nsw_lga_3,
+            //"mag": Math.ceil(Math.random()*10),
+            "lgacode": geojson.features[a].properties.lgacode,
+            "caseslist": temparr
+          }
+        })
+        LGAcenterforD3.features.push({
+          "type": "Feature",
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": geojson.features[a].geometry.coordinates
+          },
+
+          "properties": {
+            "geo_point_2d": [geojson.features[a].properties.geo_point_2d[0], geojson.features[a].properties.geo_point_2d[1]],
+            "name": geojson.features[a].properties.nsw_lga_3,
+            "mag": Math.ceil(Math.random()*10),
+            "lgacode": geojson.features[a].properties.lgacode
+          }
+        })
+
+      }
+
+      var covidcasestest = [];
+      var weektest = 53;
+
+
+      for (var i = 0; i < LGAcenterforD3.features.length; i++)
+      {
+        var casestestbyweeks = [];
+        for (var j = 1; j <= weektest; j ++)
+        {
+
+          casestestbyweeks.push({
+            "week": j,
+            "year": "2020",
+            "cases": Math.floor(Math.random()*10+1),
+            "start": 360 / weektest * (j - 1),
+            "end": 360 / weektest * j
+          });
+        }
+
+        covidcasestest.push({
+          "LGAname": LGAcenter.features[i].properties.name,
+          "LGAcode": LGAcenter.features[i].properties.lgacode,
+          "properties": casestestbyweeks
+        })
+        LGAcenterforD3.features[i].properties.caseslist = casestestbyweeks
+        //console.log(LGAcenterforD3.features[i])
+
+      }
+
+      var tempstringLGAcenterofMonth = JSON.stringify(LGAcenterofMonth);
+      var tempLGAcenterofMonth = JSON.parse(tempstringLGAcenterofMonth);
+      var tempclustersinfo = [];
+      var tempstorelgacode = [];
+
+
+      mapboxgl.accessToken = 'pk.eyJ1IjoibWFnZTUwMTgiLCJhIjoiY2psd3cwemxuMTlyYzNwb2d4cXhyNGx0ZSJ9.VkkG4riV7oxGcAnStBiHJA'
+      var map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mage5018/ckbumhoti0mes1iqmcl4m1qo7',
+        zoom: 6,
+        center: [150.91, -33.30],
+        pitchWithRotate: false,
+        dragRotate: false,
+        //maxBounds: nswBounds,
+        attributionControl: false
+      });
+      //map.addControl(new mapboxgl.NavigationControl());
+      var draw = new MapboxDraw({
+        displayControlsDefault: false,
+        // Select which mapbox-gl-draw control buttons to add to the map.
+        controls: {
+          polygon: true,
+          trash: true
+        },
+        // Set mapbox-gl-draw to draw by default.
+        // The user does not have to click the polygon control button first.
+        //defaultMode: 'draw_polygon'
+      });
+      map.addControl(draw);
+
+      map.on('load', () => {
+        map.on('draw.create', updateArea);
+        map.on('draw.delete', updateArea);
+        map.on('draw.update', updateArea);
+        // Add a data source containing GeoJSON data.
+        map.addSource('lga-polygon', {
+          'type': 'geojson',
+          'data': geojson
+        });
+
+        // Add a new layer to visualize the polygon.
+        map.addLayer({
+          'id': 'polygon-fill',
+          'type': 'fill',
+          'source': 'lga-polygon', // reference the data source
+          'layout': {},
+          'paint': {
+            'fill-color': '#e5f5e0', // blue color fill
+            'fill-opacity': 0.2
+          }
+        });
+        // Add a black outline around the polygon.
+        map.addLayer({
+          'id': 'polygon-outline',
+          'type': 'line',
+          'source': 'lga-polygon',
+          'layout': {},
+          'paint': {
+            'line-color': '#636363',
+            'line-width': 0.2
+          }
+        });
+        map.addSource('lga-center-clustered', {
+          'type': 'geojson',
+          'cluster': true,
+          'clusterRadius': 50,
+          'data': LGAcenter
+        });
+        map.addLayer({
+          'id': 'lga-center-clustered',
+          'type': 'circle',
+          'source': 'lga-center-clustered',
+          'filter': ['==', 'cluster', true],
+          'paint': {
+            'circle-opacity': 0.8,
+            'circle-color': "green",
+            'circle-radius': 4
+          }
+        });
+        map.addLayer({
+          'id': 'lga-center-unclustered',
+          'type': 'circle',
+          'source': 'lga-center-clustered',
+          'filter': ['!=', 'cluster', true],
+          'paint': {
+            'circle-opacity': 0.8,
+            'circle-color': "blue",
+            'circle-radius': 4
+          }
+        });
+
+        var container = map.getCanvasContainer()
+        const bb = container.getBoundingClientRect();
+        svg = d3v5.select(container)
+                .append("svg")
+                .style("position", "absolute")
+                .style("top", 0)
+                .style("left", 0)
+                .attr("width", bb.width)
+                .attr("height", bb.height)
+
+        // .call(zoom)
+
+        var divlegend = d3.select("body")
+                .append("div")
+                .attr("class", "divlegend");
+
+        var group_cluster = svg.append("g").attr('id', 'group_nodecluster')
+        var group_uncluster = svg.append("g").attr('id', 'group_nodeuncluster')
+        var group_select = svg.append("g").attr('id', 'group_nodeselect')
+
+        var pie = d3.layout.pie()
+                .sort(null)
+                //默认降序排列，除非传入null
+                .value(function(d) {
+                  return d.cases;
+                });
+        var arc = d3.svg.arc()
+                .startAngle(function(d) {
+                  //console.log(d);
+                  return d.data.start * 2 * Math.PI/360;
+                })
+                .endAngle(function(d) { return d.data.end * 2 * Math.PI/360; })
+                .innerRadius(4)
+                .outerRadius(function (d) {
+                  //console.log(d);
+                  // if (d.value === 1)
+                  // {
+                  //     return 6 + 3
+                  // } ELSE
+                  if( d.value === 0){
+                    return 5;
+
+                  }
+                  else{
+                    //console.log(d.value);
+                    return 5 + 2 * (1.4 + Math.log(d.value) * 1.2);
+                    //return 15;
+                  }
+                })
+                //外部高低
+                .cornerRadius(20);
+
+
+        function project(data) {
+          return map.project(new mapboxgl.LngLat(data[1], data[0]));
+        }
+
+
+        function FirstRender(){
+          console.log("do render");
+          //for first render to initialize
+          tempLGAcenterofMonth = JSON.parse(tempstringLGAcenterofMonth);
+          mapboxDynamicCluster = [];
+          new Promise(function(resolve) {
+            var clusterSourcetemp = map.queryRenderedFeatures({ layers: ['lga-center-clustered'] });
+            Calc(clusterSourcetemp, Drawoutput);
+            console.log('1');
+            resolve();
+          }).then(function() {
+            console.log('2')
+            Draw();
+          })
+
+        }
+        function OtherRender(){
+          console.log("do other renders");
+          //for first render to initialize
+          var clusterSourcetemp = map.queryRenderedFeatures({ layers: ['lga-center-clustered'] });
+          tempLGAcenterofMonth = JSON.parse(tempstringLGAcenterofMonth);
+          mapboxDynamicCluster = [];
+          CalcAgain(clusterSourcetemp, Drawoutput);
+
+        }
+
+        function Calc(data, callback){
+          //console.log(data);
+          console.log("do calc");
+          tempclustersinfo = [];
+          tempstorelgacode = [];
+          document.getElementById('features').innerHTML = "There are " + data.length + " clustered points, they are: ";
+          let p = Promise.resolve();
+          for (let i = 0; i < data.length; i++){
+            p = p.then(_ => new Promise(resolve =>
+                    setTimeout(function(){
+                      CalcSub(data[i],callback)
+                      resolve();
+                    },0)
+            ));
+          }
+        }
+
+        function CalcAgain(data, callback){
+          //console.log(data);
+          console.log("do calc again");
+          tempclustersinfo = [];
+          tempstorelgacode = [];
+          document.getElementById('features').innerHTML = "There are " + data.length + " clustered points, they are: ";
+          for (var i = 0; i < data.length; i++){
+            CalcSub(data[i],callback)
+            if (data.length -1 === i ){
+              setTimeout(Drawupdate, 100)
+              console.log("draw update finished")
+              //clearInterval(ss);
+              return;
+            }
+          }
+        }
+
+        function CalcSub(e,callback){
+
+          //console.log(e);
+          return new Promise((resolve,reject)=>{
+
+            console.log("do calcsub");
+            var clusterId = e.properties.cluster_id,
+                    point_count = e.properties.point_count,
+                    clusterSource = map.getSource('lga-center-clustered');
+            //
+            // // Get Next level cluster Children
+            // //
+            clusterSource.getClusterLeaves(clusterId, point_count, 0, function (err, aFeatures) {
+              //console.log(aFeatures);
+              document.getElementById('features').innerHTML += JSON.stringify(
+                      aFeatures,
+                      null,
+                      2
+              ) + ",";
+
+              mapboxDynamicCluster.push(aFeatures);
+              //console.log(mapboxDynamicCluster);
+
+              console.log("after calcsub");
+              callback(e);
+            });
+
+            resolve();
+
+          });
+        }
+
+        function Drawoutput(){
+
+          console.log("draw output")
+          //console.log(e);
+          // console.log(tempclustersinfo)
+          // console.log(tempLGAcenterofMonth)
+
+          tempclustersinfo = [];
+          var tempstorelgacode = [];
+          //console.log(mapboxDynamicCluster);
+          for (var i = 0; i < mapboxDynamicCluster.length; i++ )
+          {
+            var tempclustername = []; //clusters more than one
+            var tempclusterlgacode = []; //clusters more than one
+            var count = 1;
+            var tempsumx = 0;
+            var tempsumy = 0;
+            var templgasum = [];
+            var tempmonth = new Array(12).fill(0);
+            for (var j = 0; j < mapboxDynamicCluster[i].length; j++)
+            {
+              //console.log(mapboxDynamicCluster[i][j].geometry.coordinates);
+              tempclustername.push(mapboxDynamicCluster[i][j].properties.name);
+              tempclusterlgacode.push(mapboxDynamicCluster[i][j].properties.lgacode);
+              tempsumx += mapboxDynamicCluster[i][j].geometry.coordinates[0];
+              tempsumy += mapboxDynamicCluster[i][j].geometry.coordinates[1];
+              count ++;
+              tempstorelgacode.push(mapboxDynamicCluster[i][j].properties.lgacode);
+
+              for (var k = 0; k < mapboxDynamicCluster[i][j].properties.caseslist.length; k++)
+              {
+                if (mapboxDynamicCluster[i][j].properties.caseslist[k]["Month"] === k + 1)
+                  tempmonth[k] += mapboxDynamicCluster[i][j].properties.caseslist[k]["cases"];
+
+                //console.log(mapboxDynamicCluster[i][j].properties.caseslist[k]);
+
+              }
+              //console.log(tempmonth);
+            }
+            for (var l = 0; l < tempmonth.length; l++){
+              templgasum.push({
+                "Month": l + 1,
+                "cases": tempmonth[l],
+                "start": 360 / tempmonth.length * l,
+                "end": 360 / tempmonth.length * (l+1)
+              });
+            }
+            tempclustersinfo.push({
+              "clusterlgacode" : tempclusterlgacode,
+              "clustername" : tempclustername,
+              "coordinates" : [tempsumy/(count - 1), tempsumx/(count - 1)],
+              "count" : count - 1,
+              "caseslist": templgasum
+            });
+          }
+
+          //console.log(tempstorelgacode);
+
+          //var newnodeinfo = [];
+          for (let i = 0; i < tempstorelgacode.length; i ++)
+          {
+            for (let j = 0; j < tempLGAcenterofMonth.features.length; j++)
+            {
+              if (tempstorelgacode[i] == tempLGAcenterofMonth.features[j].properties.lgacode)
+              {
+                tempLGAcenterofMonth.features.splice(j,1);
+                j--
+              }
+            }
+          }
+          // console.log(mapboxDynamicCluster);
+          // console.log(tempLGAcenterofMonth);
+          // console.log(LGAcenterofMonth);
+          // console.log(tempclustersinfo);
+
+        }
+
+        function Draw(){
+          console.log("draw data")
+          var nodes_clustered = d3.select('#group_nodecluster').selectAll(".node")
+                  .data(tempclustersinfo)
+                  .enter()
+                  .append("g")
+                  .attr('id', function(d, o) {
+                    //console.log(d);
+                    var tempstringlga = "";
+                    for (var i = 0; i < d.clusterlgacode.length; i++){
+                      tempstringlga += d.clusterlgacode[i] + '-';
+                    }
+                    return 'nodecluster-' + tempstringlga;
+                  })
+                  .attr("class", "node")
+                  .attr("transform", function(data) {
+                    //console.log(data);
+                    return "translate(" + project(data.coordinates).x + "," + project(data.coordinates).y + ")";
+                  });
+          nodes_clustered.each(function(temp) {
+            // var pieflag = 0;
+            //console.log(temp);
+            //draw piesymbol
+            var tempstringlgacode = "";
+            for (var i = 0; i < temp.clusterlgacode.length; i++){
+              tempstringlgacode += temp.clusterlgacode[i] + '-';
+            }
+            var piesymbol_cluster = d3.select('#nodecluster-' + tempstringlgacode).selectAll("path");
+            //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+            piesymbol_cluster
+                    .data(function (d) {
+                      //console.log(d);
+                      return pie(d.caseslist);
+                    })
+                    .enter()
+                    .append("path")
+                    .attr("d", arc)
+                    .attr('id', function(d, o) {
+                      //console.log(d);
+                      //console.log(o);
+                      return 'piebar-' + o;
+                    })
+                    .style("fill", function(d) {
+                      //console.log(d);
+                      if ( d.data.cases === 0)
+                        return ColorGrey[0];
+                      else
+                        return Flowercolorpannel[0];
+                    })
+                    //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                    .style("stroke-width", 1)
+
+                    .on("mousemove",function(d,o){
+                    })
+
+          });
+
+          var nodes_unclustered = d3.select('#group_nodeuncluster').selectAll(".node")
+                  .data(tempLGAcenterofMonth.features)
+                  .enter()
+                  .append("g")
+                  .attr('id', function(d, i) {
+                    return 'nodeuncluster-' + d.properties.lgacode
+                  })
+                  .attr("class", "node")
+                  .attr("transform", function(data) {
+                    //console.log(data);
+                    return "translate(" + project(data.properties.geo_point_2d).x + "," + project(data.properties.geo_point_2d).y + ")";
+                  });
+
+          //console.log(tempLGAcenterofMonth);
+
+          var dots_unclustered = d3.select('#group_nodeuncluster').selectAll("circle")
+                  .data(LGAcenterofMonth.features)
+                  .enter()
+                  .append("circle")
+                  .attr('id', function(d) {
+                    //console.log(d);
+                    return 'circleuncluster-' + d.properties.lgacode
+                  })
+                  .attr("r", 4)
+                  .attr("stroke", "#636363")
+                  .attr("stroke-dasharray", 0.5)
+                  .attr("fill", "#ffffff")
+                  .attr("fill-opacity", 0)
+                  .attr("cx", function(data) {
+                    return project(data.properties.geo_point_2d).x;
+                  })
+                  .attr("cy", function(data) {
+                    return project(data.properties.geo_point_2d).y;
+                  })
+                  .on("click", function (d){
+                    if (d3.event.defaultPrevented) {
+                      return;
+                    }
+                    //console.log(d);
+                  })
+                  .on("mousemove", function (d) {
+                    //console.log(d);
+                    divlegend.style("display","none");
+                    let tempstringformonthdata = ""
+                    let count = 0;
+                    for (let i = 0; i < d.properties.caseslist.length; i++){
+                      tempstringformonthdata += "Month:" + d.properties.caseslist[i].Month + ", Cases:" + d.properties.caseslist[i].cases + "</br>";
+                      count ++;
+                    }
+
+                    divlegend.html("Name: "+ d.properties.name +"</br> LGAcode: "+  d.properties.lgacode +"</br>" + tempstringformonthdata)
+
+                            .style("left", (d3.event.pageX+12) + "px")
+                            .style("top", (d3.event.pageY-10) + "px")
+                            .style("opacity", 0.8)
+                            .style("height", function(){
+                              //console.log(tempevents);
+                              return 22 * (count + 1) + 'px';
+                            })
+                            .style("display","block");
+                  })
+                  .on("mouseout",function(d,o){
+                    divlegend.style("display","none");
+
+                  });
+
+
+          var piesymbol_uncluster;
+          nodes_unclustered.each(function(temp) {
+            // var pieflag = 0;
+            //console.log(temp);
+            //draw piesymbol
+            piesymbol_uncluster = d3.select('#nodeuncluster-' + temp.properties.lgacode).selectAll("path");
+            //piesymbol = d3.select('#circle-' + temp.properties.lgacode).selectAll("path");
+            piesymbol_uncluster
+                    .data(function (d) {
+                      //console.log(d);
+                      return pie(d.properties.caseslist);
+                    })
+                    .enter()
+                    .append("path")
+                    .attr("d", arc)
+                    .attr('id', function(d, o) {
+                      //console.log(d);
+                      //console.log(o);
+                      return 'piebar-' + o;
+                    })
+                    .style("fill", function(d) {
+                      //console.log(d);
+                      if ( d.data.cases === 0)
+                        return ColorGrey[0];
+                      else
+                        return Flowercolorpannel[0];
+                    })
+                    //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                    .style("stroke-width", 1)
+
+                    .on("mousemove",function(d,o){
+                      // console.log(d);
+                      // console.log(o);
+                    })
+
+          });
+        }
+
+        function Drawupdate(){
+          console.log("draw data updated")
+          console.log(mapboxDynamicCluster); //all cluster points
+          console.log(tempLGAcenterofMonth); //all unclustered points
+          console.log(LGAcenterofMonth); // all point data
+          console.log(tempclustersinfo); // all cluster details
+
+          var tempnode = d3.select('#group_nodeuncluster').selectAll(".node");
+          var tempupdate = tempnode.data(tempLGAcenterofMonth.features);
+          var tempenter = tempupdate.enter();
+          var tempexit = tempupdate.exit();
+          tempenter.append("g")
+                  .attr('id', function(d, i) {
+                    return 'nodeuncluster-' + d.properties.lgacode
+                  })
+                  .attr("class", "node")
+                  .attr("transform", function(data) {
+                    //console.log(data);
+                    return "translate(" + project(data.properties.geo_point_2d).x + "," + project(data.properties.geo_point_2d).y + ")";
+                  })
+          tempexit.remove();
+
+          console.log(tempnode);
+
+
+
+          var piesymbol_uncluster;
+          tempnode.each(function(temp) {
+            // var pieflag = 0;
+            //console.log(temp);
+            //draw piesymbol
+            piesymbol_uncluster = d3.select('#nodeuncluster-' + temp.properties.lgacode).selectAll("path")
+                    .data(function (d) {
+                      //console.log(d);
+                      return pie(d.properties.caseslist);
+                    })
+                    .enter()
+                    .append("path")
+                    .attr("d", arc)
+                    .attr('id', function(d, o) {
+                      //console.log(d);
+                      //console.log(o);
+                      return 'piebar-' + o;
+                    })
+                    .style("fill", function(d) {
+                      //console.log(d);
+                      if ( d.data.cases === 0)
+                        return ColorGrey[0];
+                      else
+                        return Flowercolorpannel[0];
+                    })
+                    //.attr("r", function(d) { return size(d.size)||nominal_base_node_size; })
+                    .style("stroke-width", 1)
+
+                    .on("mousemove",function(d,o){
+                      // console.log(d);
+                      // console.log(o);
+                    })
+
+          });
+          //console.log(tempnode);
+          //console.log(piesymbol_uncluster);
+
+        }
+
+        function updateArea(e) {
+          // var data = draw.getAll();
+          var clusterstring = "";
+          var unclusterstring = "";
+          clusterarr = [];
+          var selectedarr = [];
+
+          //Query selected elements
+          var draw_polygon = turf.bbox(e.features[0]);
+          var southWest = [draw_polygon[0], draw_polygon[1]];
+          var northEast = [draw_polygon[2], draw_polygon[3]];
+
+          var northEastPointPixel = map.project(northEast);
+          var southWestPointPixel = map.project(southWest);
+
+          var features_cluster = map.queryRenderedFeatures([southWestPointPixel, northEastPointPixel], { layers: ['lga-center-clustered'] });
+          var features_uncluster = map.queryRenderedFeatures([southWestPointPixel, northEastPointPixel], { layers: ['lga-center-unclustered'] });
+
+          if ((features_uncluster.length > 0) || (features_cluster.length > 0) ){
+            unclusterstring = JSON.stringify(
+                    features_uncluster,
+                    null,
+                    2
+            );
+          }
+          // console.log(features_cluster);
+          // console.log(features_uncluster);
+          var selectcallBack = function () {
+            //后续处理
+            var temp_x = 0, temp_y=0;
+            console.log(features_uncluster);
+            console.log(clusterarr);
+            //console.log(clusterstring);
+
+            document.getElementById('features').innerHTML = JSON.stringify(clusterarr,null, 2) + unclusterstring;
+
+            for (let i = 0; i < features_uncluster.length; i ++){
+              let uppername = features_uncluster[i].properties.name.toLowerCase();
+              selectedarr.push({
+                "name": uppername.charAt(0).toUpperCase() + uppername.slice(1),
+                "coordinates": features_uncluster[i]._geometry.coordinates,
+                "status": "unclustered",
+                "caseslist": JSON.parse(features_uncluster[i].properties.caseslist),
+                "lgacode": features_uncluster[i].properties.lgacode
+              });
+            }
+
+            for (let i = 0; i < clusterarr.length; i ++){
+              for (let j = 0; j < clusterarr[i].length; j ++)
+              {
+                let uppername = clusterarr[i][j].properties.name.toLowerCase();
+                selectedarr.push({
+                  "name": uppername.charAt(0).toUpperCase() + uppername.slice(1),
+                  "coordinates": clusterarr[i][j].geometry.coordinates,
+                  "status": "clustered",
+                  "caseslist": clusterarr[i][j].properties.caseslist,
+                  "lgacode": clusterarr[i][j].properties.lgacode
+                });
+              }
+
+            }
+            console.log(selectedarr);
+
+            var count = 0;
+
+            var centrepointstring = "";
+            for (var a = 0; a < selectedarr.length; a ++)
+            {
+              console.log(selectedarr[a]);
+              temp_x += Number(selectedarr[a].coordinates[0]);
+              temp_y += Number(selectedarr[a].coordinates[1]);
+              count ++;
+              centrepointstring += selectedarr[a].name + ", ";
+            }
+            var centre_coordinates = [temp_y / count, temp_x / count];
+            //console.log(centre_coordinates);
+            centrepoint.push({
+              "name": centrepointstring.substring(0, centrepointstring.length - 2),
+              "coordinates": centre_coordinates
+
+            });
+            // console.log(temp_x);
+            // console.log(temp_y);
+            // console.log(centrepoint);
+
+            //console.log(project(centrepoint[0].coordinates)); //centre of calculate point
+
+            var centredot = group_select.selectAll("circle")
+                    .data(centrepoint)
+                    .enter()
+                    .append("circle")
+                    .attr("r", 4)
+                    .attr("stroke", "#636363")
+                    .attr("stroke-dasharray", 0.5)
+                    .attr("fill", "#2E8B57")
+                    .attr("fill-opacity", 0.6)
+                    //
+                    .attr("cx", function(data) {
+                      //console.log(data);
+                      return project(data.coordinates).x;
+                    })
+                    .attr("cy", function(data) {
+                      return project(data.coordinates).y;
+                    })
+            // .attr("cx", project(centrepoint.coordinates).x)
+            // .attr("cy", project(centrepoint.coordinates).y)
+
+            //console.log(centredot);
+            // console.log(dots);
+            //render();
+
+          }
+          //console.log(features_uncluster);
+          if ((features_cluster.length > 0) || (features_uncluster.length > 0)){
+
+            //console.log(features_cluster);
+            Findclusterbycallback(features_cluster, selectcallBack)
+
+          }
+
+        }
+        function Findclusterbycallback(features_cluster,callBack){
+
+          clusterstring = ''
+          for (var i = 0; i < features_cluster.length; i++) {
+            //console.log(features_cluster[i]);
+            var clusterId = features_cluster[i].properties.cluster_id,
+                    point_count = features_cluster[i].properties.point_count,
+                    clusterSource = map.getSource('lga-center-clustered');
+            //console.log(clusterSource);
+            // Get all points under a cluster
+            // Get all points under a cluster
+
+            clusterSource.getClusterLeaves(clusterId, point_count, 0, (err, aFeatures) =>{
+              clusterarr.push(aFeatures);
+              //console.log(aFeatures);
+              //console.log('getClusterLeaves', err, aFeatures);
+              clusterstring += JSON.stringify(
+                      aFeatures,
+                      null,
+                      2
+              );
+            })
+            //console.log(i);
+            //console.log(clusterarr);
+            if (features_cluster.length -1 === i ){
+              setTimeout(callBack, 200)
+              //clearInterval(ss);
+              return;
+            }
+
+          }
+          setTimeout(callBack, 50);
+        }
+
+        //FirstRender();
+        console.log('A load event occurred.');
+        map.on('idle', ()=>{
+          if (loadflag === 0){
+            new Promise(function(resolve) {
+              FirstRender(); // Call once to render
+              loadflag = 1;
+              resolve();
+            }).then(function() {
+              Allpointset();
+              console.log('An initial idle event occurred.');
+            })
+
+          }
+          else
+          {
+            OtherRender();
+            console.log('An idle event occurred.');
+          }
+
+
+        })
+        //
+        map.on('move', ()=>{
+          Allpointset();
+          console.log('A move event occurred.');
+        })
+        function Allpointset() {
+
+          group_select.selectAll("circle")
+                  .attr("cx", function(data) {
+                    //console.log(data);
+                    return project(data.coordinates).x;
+                  })
+                  .attr("cy", function(data) {
+                    return project(data.coordinates).y;
+                  })
+          group_select.selectAll("circle")
+                  .on('click', function (params){
+                    if (d3.event.defaultPrevented) {
+                      return;
+                    }
+                    console.log(params);
+                  })
+
+          // d3.select('#group_nodecluster').selectAll("circle")
+          //         .attr("cx", function(data) {
+          //           return project(data.properties.geo_point_2d).x;
+          //         })
+          //         .attr("cy", function(data) {
+          //           return project(data.properties.geo_point_2d).y;
+          //         });
+
+          d3.select('#group_nodecluster').selectAll(".node")
+                  .attr("transform", function (data) {
+                    //console.log(data);
+                    return "translate(" + project(data.coordinates).x + "," + project(data.coordinates).y + ")";
+                  });
+
+          d3.select('#group_nodeuncluster').selectAll(".node")
+                  .attr("transform", function(data) {
+                    //console.log(data);
+                    return "translate(" + project(data.properties.geo_point_2d).x + "," + project(data.properties.geo_point_2d).y + ")";
+                  });
+
+          // console.log(d3.select('#group_nodeuncluster').selectAll(".node"));
+          // console.log(d3.select('#group_nodecluster'));
+
+          d3.select('#group_nodeuncluster').selectAll("circle")
+                  .attr("cx", function(data) {
+                    return project(data.properties.geo_point_2d).x;
+                  })
+                  .attr("cy", function(data) {
+                    return project(data.properties.geo_point_2d).y;
+                  });
+
+
+        }
+      });
+    })
+  });
+
+  //Common function
+  function Unique(arr){
+    let temp = {}	//	用于name判断
+    let result = [] // 最后的新数组
+    arr.map((item, index) => {
+      if (!temp[item.properties.cluster_id]) {
+        result.push(item)
+        temp[item.properties.cluster_id] = true
+      }
+    })
+    return result;
+  }
+
+
+</script>
+</body>

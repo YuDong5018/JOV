@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Display HTML clusters with custom properties</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.3.1/mapbox-gl.js"></script>
+    <script src='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.js'></script>
+    <link href='https://api.mapbox.com/mapbox.js/v3.3.1/mapbox.css' rel='stylesheet' />
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.2/mapbox-gl-draw.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.2.2/mapbox-gl-draw.css" type="text/css">
+    <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
+
+    <script src="./JS/windowstyle.js"></script>
+    <link rel="stylesheet" type="text/css" href="./CSS/windowstyle.css" />
+
+    <script src="./JS/jquery.min.js"></script>
+    <script src="./JS//jquery-ui.min.js"></script>
+    <script src ="http://d3js.org/d3.v3.min.js" charset="utf-8" ></script>
+
+
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        .calculation-box {
+            height: 75px;
+            width: 150px;
+            position: absolute;
+            bottom: 40px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            text-align: center;
+        }
+
+        p {
+            font-family: 'Open Sans';
+            margin: 0;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+
+<div id="map"></div>
+<div id="drag">
+    <div class="title">
+        <h2>Memory</h2>
+        <div>
+            <a class="min" href="javascript:;" title="Minimum"></a>
+            <a class="max" href="javascript:;" title="Maximum"></a>
+            <a class="revert" href="javascript:;" title="Revert"></a>
+            <a class="close" href="javascript:;" title="Close"></a>
+        </div>
+    </div>
+    <div class="resizeL"></div>
+    <div class="resizeT"></div>
+    <div class="resizeR"></div>
+    <div class="resizeB"></div>
+    <div class="resizeLT"></div>
+    <div class="resizeTR"></div>
+    <div class="resizeBR"></div>
+    <div class="resizeLB"></div>
+    <!--    <div class="content" id="dragwindow">-->
+
+    <!--    </div>-->
+    <div class = "content" id="h" style="height: 70%" >
+        <div id="calculated-area">
+
+        </div>
+    </div>
+    <div class = "content" id="selectbotton" style="height: 10%" >
+        <button type="button" style="width: 60px" onclick="">Expand</button>
+
+    </div>
+
+</div>
+
+<script>
+    // TO MAKE THE MAP APPEAR YOU MUST
+    // ADD YOUR ACCESS TOKEN FROM
+    // https://account.mapbox.com
+    // $.getJSON('./Data/wfs.json',function(e) {
+    //     console.log(e);
+    // });
+
+
+
+    $.getJSON('./Data/11nsw-lga-boundaries.geojson',function(e) {
+        console.log(e);
+        var LGAcenter = {
+            type: 'FeatureCollection',
+            features: []
+        };
+
+        for (var a = 0; a < e.features.length; a++){
+            var LGAregion = [];
+            // for (var b=0; b < e.features[a].geometry.coordinates.length; b ++) {
+            //     LGAregion.push(e.features[a].geometry.coordinates[b]);
+            // }
+            // for (var c = 0; c < LGAregion.length; c++){
+            //
+            // }
+            LGAcenter.features.push({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [e.features[a].properties.geo_point_2d[1], e.features[a].properties.geo_point_2d[0]]
+                    //swap latlng orders
+                },
+                "properties": {
+                    "name": e.features[a].properties.nsw_lga_3,
+                    "mag": Math.ceil(Math.random()*10)
+                }
+            }) 
+
+            //console.log(e.features[a].geometry.coordinates);
+
+        }
+        // var markers = [];
+        // for (var i = 0; i < LGAcenter.length; i++){
+        //     markers.push(
+        //         { "type": "Feature",
+        //             "properties": { "id": i },
+        //             "geometry": {
+        //                 "type": "Point",
+        //                 "coordinates": [ L.polygon(LGAcenter[i]).getBounds().getCenter().lng, L.polygon(LGAcenter[i]).getBounds().getCenter().lat ]
+        //         } }
+        //         // L.polygon(LGAcenter[i]).getBounds().getCenter()
+        //     );
+        //
+        // }
+        console.log(LGAcenter);
+
+        mapboxgl.accessToken = 'pk.eyJ1IjoibWFnZTUwMTgiLCJhIjoiY2psd3cwemxuMTlyYzNwb2d4cXhyNGx0ZSJ9.VkkG4riV7oxGcAnStBiHJA'
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mage5018/ckbumhoti0mes1iqmcl4m1qo7',
+            zoom: 8,
+            center: [150.91, -33.30],
+            pitchWithRotate: false,
+            dragRotate: false,
+            //maxBounds: nswBounds,
+            attributionControl: false
+        });
+
+        //map.addControl(new mapboxgl.NavigationControl());
+        var draw = new MapboxDraw({
+            displayControlsDefault: false,
+// Select which mapbox-gl-draw control buttons to add to the map.
+            controls: {
+                polygon: true,
+                trash: true
+            },
+// Set mapbox-gl-draw to draw by default.
+// The user does not have to click the polygon control button first.
+            //defaultMode: 'draw_polygon'
+        });
+
+        map.addControl(draw);
+        map.on('draw.create', updateArea);
+        map.on('draw.delete', updateArea);
+        map.on('draw.update', updateArea);
+
+        // filters for classifying earthquakes into five categories based on magnitude
+        var mag1 = ['<', ['get', 'mag'], 2];
+        var mag2 = ['all', ['>=', ['get', 'mag'], 2], ['<', ['get', 'mag'], 3]];
+        var mag3 = ['all', ['>=', ['get', 'mag'], 3], ['<', ['get', 'mag'], 4]];
+        var mag4 = ['all', ['>=', ['get', 'mag'], 4], ['<', ['get', 'mag'], 5]];
+        var mag5 = ['>=', ['get', 'mag'], 5];
+
+        // colors to use for the categories
+        var colors = ['#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c'];
+
+        map.on('load', function () {
+
+            var layers = map.getStyle().layers;
+// Find the index of the first symbol layer in the map style
+            var firstSymbolId;
+            for (var i = 0; i < layers.length; i++) {
+                if (layers[i].type === 'symbol') {
+                    firstSymbolId = layers[i].id;
+                    break;
+                }
+            }
+            map.addSource('urban-areas', {
+                'type': 'geojson',
+                'data': './Data/11nsw-lga-boundaries.geojson'
+            });
+            map.addLayer(
+                {
+                    'id': 'urban-areas-fill',
+                    'type': 'fill',
+                    'source': 'urban-areas',
+                    'layout': {},
+                    'paint': {
+                        'fill-color': '#C0C0C0',
+                        'fill-opacity': 0.5
+                    }
+// This is the important part of this example: the addLayer
+// method takes 2 arguments: the layer as an object, and a string
+// representing another layer's name. if the other layer
+// exists in the stylesheet already, the new layer will be positioned
+// right before that layer in the stack, making it possible to put
+// 'overlays' anywhere in the layer stack.
+// Insert the layer beneath the first symbol layer.
+                },
+                firstSymbolId
+            );
+            map.addLayer({
+                "id": "urban-areas-line",
+                "type": "line",
+                "source": "urban-areas",
+
+                "paint": {
+                    "line-color": '#000',
+                    //"line-color": ColorBrown[9],
+                    "line-width": 1
+
+                },
+                'fill-opacity': 0.9
+            });
+            map.addSource('lga-center', {
+                'type': 'geojson',
+                'cluster': true,
+                'clusterRadius': 15,
+                'data': LGAcenter
+            });
+            map.addLayer({
+                'id': 'lga-center',
+                'type': 'circle',
+                'source': 'lga-center',
+                'filter': ['!=', 'cluster', true],
+                'paint': {
+                    'circle-opacity': 0.6,
+                    'circle-radius': 4
+                }
+            });
+
+// add a clustered GeoJSON source for a sample set of earthquakes
+            map.addSource('cases', {
+                'type': 'geojson',
+                //'data': 'https://docs.mapbox.com/mapbox-gl-js/assets/earthquakes.geojson',
+                //'data': './Data/data_online.json',
+                'data': LGAcenter,
+                'cluster': true,
+                'clusterRadius': 30,
+                'clusterProperties': {
+// keep separate counts for each magnitude category in a cluster
+                    'mag1': ['+', ['case', mag1, 1, 0]],
+                    'mag2': ['+', ['case', mag2, 1, 0]],
+                    'mag3': ['+', ['case', mag3, 1, 0]],
+                    'mag4': ['+', ['case', mag4, 1, 0]],
+                    'mag5': ['+', ['case', mag5, 1, 0]]
+                }
+            });
+
+// circle and symbol layers for rendering individual earthquakes (unclustered points)
+            map.addLayer({
+                'id': 'earthquake_circle',
+                'type': 'circle',
+                'source': 'cases',
+                'filter': ['!=', 'cluster', true],
+                'paint': {
+                    'circle-color': [
+                        'case',
+                        mag1,
+                        colors[0],
+                        mag2,
+                        colors[1],
+                        mag3,
+                        colors[2],
+                        mag4,
+                        colors[3],
+                        colors[4]
+                    ],
+                    'circle-opacity': 0.6,
+                    'circle-radius': 16
+                }
+            });
+            map.addLayer({
+                'id': 'cases_label',
+                'type': 'symbol',
+                'source': 'cases',
+                'filter': ['!=', 'cluster', true],
+                'layout': {
+                    'text-field': [
+                        'number-format',
+                        ['get', 'mag'],
+                        { 'min-fraction-digits': 1, 'max-fraction-digits': 1 }
+                    ],
+                    'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                    'text-size': 10
+                },
+                'paint': {
+                    'text-color': [
+                        'case',
+                        ['<', ['get', 'mag'], 3],
+                        'black',
+                        'white'
+                    ]
+                }
+            });
+
+
+// objects for caching and keeping track of HTML marker objects (for performance)
+            var markers = {};
+            var markersOnScreen = {};
+
+            function updateMarkers() {
+                var newMarkers = {};
+                var features = map.querySourceFeatures('cases');
+                console.log(features);
+// for every cluster on the screen, create an HTML marker for it (if we didn't yet),
+// and add it to the map if it's not there already
+                for (var i = 0; i < features.length; i++) {
+                    var coords = features[i].geometry.coordinates;
+                    var props = features[i].properties;
+                    if (!props.cluster) continue;
+                    var id = props.cluster_id;
+                    console.log(props.cluster);
+                    var marker = markers[id];
+                    if (!marker) {
+                        var el = createDonutChart(props);
+                        marker = markers[id] = new mapboxgl.Marker({
+                            element: el
+                        }).setLngLat(coords);
+                    }
+                    newMarkers[id] = marker;
+                    console.log(marker);
+                    if (!markersOnScreen[id]) marker.addTo(map);
+                }
+// for every marker we've added previously, remove those that are no longer visible
+                for (id in markersOnScreen) {
+                    if (!newMarkers[id]) markersOnScreen[id].remove();
+                }
+                markersOnScreen = newMarkers;
+
+            }
+
+// after the GeoJSON data is loaded, update markers on the screen on every frame
+            map.on('render', function () {
+                if (!map.isSourceLoaded('cases')) return;
+                updateMarkers();
+            });
+
+
+        });
+
+        // code for creating an SVG donut chart from feature properties
+        function createDonutChart(props) {
+            var offsets = [];
+            var counts = [
+                props.mag1,
+                props.mag2,
+                props.mag3,
+                props.mag4,
+                props.mag5
+            ];
+            var total = 0;
+            for (var i = 0; i < counts.length; i++) {
+                offsets.push(total);
+                total += counts[i];
+            }
+            var fontSize =
+                total >= 1000 ? 22 : total >= 100 ? 20 : total >= 10 ? 18 : 16;
+            var r = total >= 1000 ? 50 : total >= 100 ? 32 : total >= 10 ? 24 : 18;
+            var r0 = Math.round(r * 0.6);
+            var w = r * 2;
+
+            var html =
+                '<div><svg width="' +
+                w +
+                '" height="' +
+                w +
+                '" viewbox="0 0 ' +
+                w +
+                ' ' +
+                w +
+                '" text-anchor="middle" style="font: ' +
+                fontSize +
+                'px sans-serif; display: block">';
+
+            for (i = 0; i < counts.length; i++) {
+                html += donutSegment(
+                    offsets[i] / total,
+                    (offsets[i] + counts[i]) / total,
+                    r,
+                    r0,
+                    colors[i]
+                );
+            }
+            html +=
+                '<circle cx="' +
+                r +
+                '" cy="' +
+                r +
+                '" r="' +
+                r0 +
+                '" fill="white" /><text dominant-baseline="central" transform="translate(' +
+                r +
+                ', ' +
+                r +
+                ')">' +
+                total.toLocaleString() +
+                '</text></svg></div>';
+
+            var el = document.createElement('div');
+            el.innerHTML = html;
+            console.log(html);
+            return el.firstChild;
+        }
+
+        function donutSegment(start, end, r, r0, color) {
+            if (end - start === 1) end -= 0.00001;
+            var a0 = 2 * Math.PI * (start - 0.25);
+            var a1 = 2 * Math.PI * (end - 0.25);
+            var x0 = Math.cos(a0),
+                y0 = Math.sin(a0);
+            var x1 = Math.cos(a1),
+                y1 = Math.sin(a1);
+            var largeArc = end - start > 0.5 ? 1 : 0;
+
+            return [
+                '<path d="M',
+                r + r0 * x0,
+                r + r0 * y0,
+                'L',
+                r + r * x0,
+                r + r * y0,
+                'A',
+                r,
+                r,
+                0,
+                largeArc,
+                1,
+                r + r * x1,
+                r + r * y1,
+                'L',
+                r + r0 * x1,
+                r + r0 * y1,
+                'A',
+                r0,
+                r0,
+                0,
+                largeArc,
+                0,
+                r + r0 * x0,
+                r + r0 * y0,
+                '" fill="' + color + '" />'
+            ].join(' ');
+        }
+
+        function updateArea(e) {
+            var data = draw.getAll();
+            var answer = document.getElementById('calculated-area');
+            //console.log(data);
+            if (data.features.length > 0) {
+                var userPolygon = e.features[0];
+
+                var area = turf.area(data);
+// Restrict the area to 2 decimal points.
+                var rounded_area = Math.round(area * 100) / 100;
+                answer.innerHTML =
+                    '<p><strong>' +
+                    rounded_area +
+                    '</strong></p><p>square meters</p>';
+            } else {
+                answer.innerHTML = '';
+                if (e.type !== 'draw.delete')
+                    alert('Click the map to draw a polygon.');
+            }
+            //Query selected elements
+            var draw_polygon = turf.bbox(e.features[0]);
+            var southWest = [draw_polygon[0], draw_polygon[1]];
+            var northEast = [draw_polygon[2], draw_polygon[3]];
+
+            var northEastPointPixel = map.project(northEast);
+            var southWestPointPixel = map.project(southWest);
+
+            var features = map.queryRenderedFeatures([southWestPointPixel, northEastPointPixel], { layers: ['earthquake_circle'] });
+            //
+            // console.log(draw_polygon);
+            // console.log(features);
+            // console.log(userPolygon);
+        }
+
+        // Setup our svg layer that we can manipulate with d3
+        var container = map.getCanvasContainer()
+        var svg = d3.select(container).append("svg")
+
+    });
+
+
+
+</script>
+
+</body>
+</html>
